@@ -472,7 +472,8 @@ def StartSelect(): string
 enddef
 
 def GetKouhoFromJisyo(path: string, key: string): list<string>
-  const head = $'{key} '
+  const enc = ToFullPathAndEncode(path)[1]
+  const head = $'{key} '->Iconv(&enc, enc)
   const lines = ReadJisyo(path)
   const max = len(lines) - 1
   if max < 0
@@ -486,7 +487,7 @@ def GetKouhoFromJisyo(path: string, key: string): list<string>
     const line = lines[i]
     if line->StartsWith(head)
       var result = []
-      for k in line->Split(' ')[1]->split('/')
+      for k in line->Iconv(enc, &enc)->Split(' ')[1]->split('/')
         result->add(k->substitute(';.*$', '', ''))
       endfor
       return result
@@ -572,10 +573,11 @@ def ShowResent(_target: string): string
   if mode ==# mode_hira || mode ==# mode_kata
     target = target->substitute('n$', 'ん', '')
   endif
-  kouho = [target]
+  const enc = ToFullPathAndEncode(g:vim9skk.jisyo_recent)[1]
+  kouho = [target->Iconv(&enc, enc)]
   for j in ReadJisyo(g:vim9skk.jisyo_recent)
     if j->StartsWith(target)
-      kouho += j->Split(' ')[1]->split('/')
+      kouho += j->Iconv(enc, &enc)->Split(' ')[1]->split('/')
     endif
   endfor
   if len(kouho) ==# 1
@@ -640,7 +642,11 @@ def ToFullPathAndEncode(path: string): list<string>
   endif
 enddef
 
-def Iconv(lines: list<string>, from_enc: string, to_enc: string): list<string>
+def Iconv(line: string, from_enc: string, to_enc: string): string
+  return [line]->IconvLines(from_enc, to_enc)[0]
+enddef
+
+def IconvLines(lines: list<string>, from_enc: string, to_enc: string): list<string>
   const f = from_enc ?? &enc
   const t = to_enc ?? &enc
   if !lines || f ==# t
@@ -659,12 +665,14 @@ def ReadJisyo(path: string): list<string>
     return jisyo[path]
   endif
   # 読み込んでスクリプトローカルにキャッシュする
-  const [p, enc] = ToFullPathAndEncode(path)
+  const p = ToFullPathAndEncode(path)[0]
   if !filereadable(p)
     return []
   endif
-  var lines = readfile(p)->Iconv(enc, &enc) # TODO: Iconvがすごい重い
-  # var lines = readfile(p)
+  # IconvLinesはWindowsですごく重いので、
+  # 検索時に検索対象の方の文字コードを辞書にあわせる
+  # var lines = readfile(p)->IconvLines(enc, &enc)
+  var lines = readfile(p)
   lines->sort()
   jisyo[path] = lines
   return jisyo[path]
@@ -672,7 +680,7 @@ enddef
 
 def WriteJisyo(lines: list<string>, path: string, flags: string = '')
   const [p, enc] = ToFullPathAndEncode(path)
-  writefile(lines->Iconv(&enc, enc), p, flags)
+  writefile(lines->IconvLines(&enc, enc), p, flags)
 enddef
 
 export def RegisterToUserJisyo(key: string): list<string>
