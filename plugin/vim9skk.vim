@@ -2,8 +2,8 @@ vim9script
 
 var default = {
   jisyo: ['~/SKK-JISYO.L:EUC-JP'],
-  jisyo_user: '~/VIM9SKK-USER.L',
-  jisyo_recent: '~/VIM9SKK-RECENT.L',
+  jisyo_user: '~/VIM9SKK-JISYO.user',
+  jisyo_recent: '~/VIM9SKK-JISYO.recent',
   recent: 1000,
   space: ' ',
   parens: ['（）', '〔〕', '［］', '｛｝', '〈〉', '《》', '「」', '『』', '【】'],
