@@ -1,0 +1,215 @@
+*vim9skk.txt*	a summary
+
+Author  : utubo
+License : MIT license  {{{
+    Permission is hereby granted, free of charge, to any person obtaining
+    a copy of this software and associated documentation files (the
+    "Software"), to deal in the Software without restriction, including
+    without limitation the rights to use, copy, modify, merge, publish,
+    distribute, sublicense, and/or sell copies of the Software, and to
+    permit persons to whom the Software is furnished to do so, subject to
+    the following conditions:
+    The above copyright notice and this permission notice shall be included
+    in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+}}}
+
+==============================================================================
+CONTENTS					*vim9skk-contents*
+
+INTRODUCTION			|vim9skk-introduction|
+USAGE				|vim9skk-usage|
+INTERFACE			|vim9skk-interface|
+  VARIABLES			  |vim9skk-variables|
+  KEY-MAPPINGS			  |vim9skk-key-mappings|
+  COMMANDS			  |vim9skk-commands|
+  EVENTS			  |vim9skk-events|
+TODO				|vim9skk-todo|
+CHANGELOG			|vim9skk-changelog|
+
+
+==============================================================================
+INTRODUCTION					*vim9skk-introduction*
+
+*vim9skk* は、Vim9 Scriptで実装したSKK日本語入力プラグインです
+
+Latest version:
+https://github.com/utubo/vim9skk.vim
+
+
+==============================================================================
+USAGE						*vim9skk-usage*
+
+挿入モードで`<C-j>`で起動します
+基本的にはよくあるSKKの入力形式と同様です
+(まだ実装されていないものが多々ありますが…)
+一度変換した候補は、見出しモード中にポップアップで表示されます
+
+ひらがなモードまたはカタカナモードで以下の変換が用意されています
+	`z<Space>` 全角スペース
+	`z,` ・
+	`z.` …
+	`z[` 「
+	`z]` 」
+	`zh` ←
+	`zj` ↓
+	`zk` ↑
+	`zl` →
+
+
+==============================================================================
+INTERFACE					*vim9skk-interface*
+
+------------------------------------------------------------------------------
+VARIABLES					*vim9skk-variables*
+
+g:vim9skk_mode					*g:vim9skk_mode*
+	現在の入力モード
+	statuslineなどにお使いください
+
+g:vim9skk_selectable				*g:vim9skk_selectable*
+	選択できる変換候補がある場合true、それ以外の場合false
+
+g:vim9skk					*g:vim9skk*
+	各種設定
+	jisyo
+		辞書ファイルのパスの配列
+		`ファイル名:文字コード`の形式
+	jisyo_user
+		ユーザー辞書ファイルのパス
+	jisyo_recent
+		「最後に実行した変換」辞書ファイルのパス
+		「最後に実行した変換」辞書はvimを閉じるときに保存されます
+	recent
+		「最後に実行した変換」辞書の最大件数
+	space
+		全角モード時の空白文字
+		デフォルト: 半角空白
+	parens
+		全角括弧のリスト
+		この文字列に変換した場合、カーソルを1つ左に移動します
+	marker_midasi
+		見出しのマーカー
+		デフォルト: `▽`
+	marker_select
+		見出しのマーカー
+		デフォルト: `▼`
+	mode_label
+		現在のモードを表す文字
+	mode_label_timeout
+		現在のモードのポップアップ表示時間(ミリ秒)
+		0で非表示
+	popup_maxheight
+		変換候補の最大表示行数
+		0で非表示
+	disable_default_mappings
+		起動時にデフォルトのキーマップを割り当てないようにします
+
+	デフォルト
+>
+		jisyo: ['~/SKK-JISYO.L:EUC-JP'],
+		jisyo_user: '~/VIM9SKK-USER.L',
+		jisyo_recent: '~/VIM9SKK-RECENT.L',
+		recent: 1000,
+		space: ' ',
+		parens: [
+			'（）', '〔〕', '［］', '｛｝', '〈〉',
+			'《》', '「」', '『』', '【】'
+		],
+		marker_midasi: '▽',
+		marker_select: '▼',
+		mode_label: {
+			off: '_A',
+			hira: 'あ',
+			kata: 'ア',
+			hankaku: 'ｶﾅ',
+			alphabet: 'Ａ',
+			abbr: 'ab',
+		},
+		mode_label_timeout: 3000,
+		popup_maxheight: 20,
+		disable_default_mappings: false,
+
+------------------------------------------------------------------------------
+KEY-MAPPINGS					*vim9skk-key-mappings*
+
+<Plug>(vim9skk-toggle)				*<Plug>(vim9skk-toggle)*
+	vim9skkのオンオフをトグルします
+	全角英数モードやabbrモードの場合は、ひらがなモードに切り替えます
+
+<Plug>(vim9skk-kana)				*<Plug>(vim9skk-kana)*
+	カナモードをトグルします
+
+<Plug>(vim9skk-hankaku)				*<Plug>(vim9skk-hankaku)*
+	半角カナモードをトグルします
+
+<Plug>(vim9skk-alphabet)			*<Plug>(vim9skk-alphabet)*
+	全角英数モードをトグルします
+
+<Plug>(vim9skk-abbr)				*<Plug>(vim9skk-abbr)*
+	abbrevモードをトグルします
+
+<Plug>(vim9skk-hira)				*<Plug>(vim9skk-hira)*
+	ひらがなモードに切り替えます
+
+<Plug>(vim9skk-next)				*<Plug>(vim9skk-next)*
+	次の候補を選択します
+	選択モード中の`<Space>`と同様
+
+<Plug>(vim9skk-prev)				*<Plug>(vim9skk-prev)*
+	前の候補を選択します
+	選択モード中の`x`と同様
+
+						*vim9skk-default-key-mappings*
+
+>
+   noremap! <C-j> <Plug>(vim9skk-toggle)
+   lnoremap <C-j> <Plug>(vim9skk-toggle)
+   lnoremap q     <Plug>(vim9skk-kana)
+   lnoremap <C-q> <Plug>(vim9skk-hankaku)
+   lnoremap L     <Plug>(vim9skk-alphabet)
+   lnoremap /     <Plug>(vim9skk-abbr)
+   lnoremap Q     <Plug>(vim9skk-midasi)
+   lnoremap <expr> <Tab> g:vim9skk_selectable ? '<Plug>(vim9skk-next)' : '<TAB>'
+   lnoremap <S-Tab> <Plug>(vim9skk-prev)
+<
+
+------------------------------------------------------------------------------
+COMMANDS					*vim9skk-commands*
+
+:Vim9skkRefreshJisyo				*:Vim9skkRefreshJisyo*
+	辞書を再読み込みします
+
+
+------------------------------------------------------------------------------
+EVENTS						*vim9skk-events*
+
+:Vim9ModeChanged				*:Vim9skkModeChanged*
+	`g:vim9skk_mode`が変更されたときに発火します
+
+
+==============================================================================
+TODO						*vim9skk-todo*
+
+- [ ] Usageをもう少し書く
+- [ ] プラグインの名前これでいいのか？
+- [ ] 設定項目を整理する
+- [ ] 色を指定をできるようにする
+- [ ] 見出しモードじゃなくても予測変換を表示したい
+- [ ] 予測変換を連鎖させたい
+- [ ] ローマ字入力って素直にlmapすればよい？？
+
+
+==============================================================================
+CHANGELOG					*vim9skk-changelog*
+
+
+==============================================================================
+vim:tw=78:ts=8:ft=help:norl:noet:fen:
