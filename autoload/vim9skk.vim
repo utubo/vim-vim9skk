@@ -473,15 +473,38 @@ enddef
 
 def GetKouhoFromJisyo(path: string, key: string): list<string>
   const head = $'{key} '
-  for j in ReadJisyo(path)
-    if j->StartsWith(head)
+  const lines = ReadJisyo(path)
+  const max = len(lines) - 1
+  if max < 0
+    return []
+  endif
+  var limit = g:vim9skk.search_limit
+  var d = max
+  var i = max / 2
+  while !!limit
+    limit -= 1
+    const line = lines[i]
+    if line->StartsWith(head)
       var result = []
-      for k in j->Split(' ')[1]->split('/')
+      for k in line->Split(' ')[1]->split('/')
         result->add(k->substitute(';.*$', '', ''))
       endfor
       return result
     endif
-  endfor
+    d /= 2
+    if !d
+      if !!limit
+        # 残りの探索が奇数個だと取り漏らすので、あと1回だけ探索がんばる
+        limit = 1
+        d = 1
+      else
+        # もうだめ
+        break
+      endif
+    endif
+    i += line < head ? d : -d
+    i = i < 0 ? 0 : max < i ? max : i
+  endwhile
   return []
 enddef
 
@@ -640,7 +663,10 @@ def ReadJisyo(path: string): list<string>
   if !filereadable(p)
     return []
   endif
-  jisyo[path] = readfile(p)->Iconv(enc, &enc)
+  var lines = readfile(p)->Iconv(enc, &enc) # TODO: Iconvがすごい重い
+  # var lines = readfile(p)
+  lines->sort()
+  jisyo[path] = lines
   return jisyo[path]
 enddef
 

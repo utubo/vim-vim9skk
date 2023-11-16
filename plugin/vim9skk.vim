@@ -19,6 +19,7 @@ var default = {
   },
   mode_label_timeout: 3000,
   popup_maxheight: 20,
+  search_limit: 100,
   disable_default_mappings: false,
 }
 g:vim9skk = default->extend(get(g:, 'vim9skk', { }))
