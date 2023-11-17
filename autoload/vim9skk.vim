@@ -577,14 +577,15 @@ enddef
 
 # 予測変換ポップアップ {{{
 def ShowResent(_target: string): string
-  const [lines, enc] = ReadJisyo(g:vim9skk.jisyo_recent)
   var target = _target
   if mode ==# mode_hira || mode ==# mode_kata
     target = target->substitute('n$', 'ん', '')
   endif
-  kouho = [target->IconvTo(enc)]
+  kouho = [target]
+  const [lines, enc] = ReadJisyo(g:vim9skk.jisyo_recent)
+  const head = target->IconvTo(enc)
   for j in lines
-    if j->StartsWith(target)
+    if j->StartsWith(head)
       kouho += j->IconvFrom(enc)->Split(' ')[1]->split('/')
     endif
   endfor
