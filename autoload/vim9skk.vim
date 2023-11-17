@@ -475,7 +475,7 @@ enddef
 
 def GetKouhoFromJisyo(path: string, key: string): list<string>
   const [lines, enc] = ReadJisyo(path)
-  const head = $'{key} '->Iconv(&enc, enc)
+  const head = $'{key} '->IconvTo(enc)
   const max = len(lines) - 1
   if max < 0
     return []
@@ -488,7 +488,7 @@ def GetKouhoFromJisyo(path: string, key: string): list<string>
     const line = lines[i]
     if line->StartsWith(head)
       var result = []
-      for k in line->Iconv(enc, &enc)->Split(' ')[1]->split('/')
+      for k in line->IconvFrom(enc)->Split(' ')[1]->split('/')
         result->add(k->substitute(';.*$', '', ''))
       endfor
       return result
@@ -575,10 +575,10 @@ def ShowResent(_target: string): string
   if mode ==# mode_hira || mode ==# mode_kata
     target = target->substitute('n$', 'ん', '')
   endif
-  kouho = [target->Iconv(&enc, enc)]
+  kouho = [target->IconvTo(enc)]
   for j in lines
     if j->StartsWith(target)
-      kouho += j->Iconv(enc, &enc)->Split(' ')[1]->split('/')
+      kouho += j->IconvFrom(enc)->Split(' ')[1]->split('/')
     endif
   endfor
   if len(kouho) ==# 1
@@ -643,13 +643,20 @@ def ToFullPathAndEncode(path: string): list<string>
   endif
 enddef
 
-def Iconv(str: string, from_enc: string, to_enc: string): string
-  const f = from_enc ?? &enc
-  const t = to_enc ?? &enc
-  if !str || f ==# t
+def IconvTo(str: string, enc: string): string
+  const e = enc ?? &enc
+  if !str || enc ==# &enc
     return str
   endif
-  return str->iconv(f, t)
+  return str->iconv(&enc, enc)
+enddef
+
+def IconvFrom(str: string, enc: string): string
+  const e = enc ?? &enc
+  if !str || enc ==# &enc
+    return str
+  endif
+  return str->iconv(enc, &enc)
 enddef
 
 def ReadJisyo(path: string): list<any>
@@ -662,9 +669,9 @@ def ReadJisyo(path: string): list<any>
   if !filereadable(p)
     return []
   endif
-  # IconvはWindowsですごく重いので、
+  # iconvはWindowsですごく重いので、
   # 検索時に検索対象の方の文字コードを辞書にあわせる
-  # var lines = readfile(p)->Iconv配列対応版(enc, &enc)
+  # var lines = readfile(p)->IconvFrom配列対応版(enc)
   var lines = readfile(p)
   lines->sort()
   jisyo[path] = lines
@@ -690,7 +697,7 @@ export def RegisterToUserJisyo(key: string): list<string>
       # ユーザー辞書に登録する
       const newline = $'{key} /{value}/'
       const [lines, enc] = ReadJisyo(g:vim9skk.jisyo_user)
-      jisyo[g:vim9skk.jisyo_user] = lines + [newline->Iconv(&enc, enc)]
+      jisyo[g:vim9skk.jisyo_user] = lines + [newline->IconvTo(enc)]
       WriteJisyo([newline], expand(g:vim9skk.jisyo_user), 'a')
       echo '登録しました'
       result += [value]
@@ -709,9 +716,9 @@ def RegisterToRecentJisyo(before: string, after: string)
   const newline = $'{before} /{afters->Uniq()->join("/")}/'
   # 既存の行を削除してから先頭に追加する
   var [lines, enc] = ReadJisyo(g:vim9skk.jisyo_recent)
-  const head = $'{before }'->Iconv(&enc, enc)
+  const head = $'{before }'->IconvTo(enc)
   lines->filter((i, v) => !v->StartsWith(head))
-  jisyo[g:vim9skk.jisyo_recent] = [newline->Iconv(&enc, enc)] + lines[: g:vim9skk.recent]
+  jisyo[g:vim9skk.jisyo_recent] = [newline->IconvTo(enc)] + lines[: g:vim9skk.recent]
 enddef
 
 def SaveRecentlies()
