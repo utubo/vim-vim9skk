@@ -73,6 +73,10 @@ VARIABLES					*vim9skk-variables*
 g:vim9skk_mode					*g:vim9skk_mode*
 	現在の入力モード
 	statuslineなどにお使いください
+	以下の様にユーザーイベントを利用するとリアルタイムで更新できます
+>
+	autocmd User Vim9skkModeChanged redraws!
+<
 
 g:vim9skk_selectable				*g:vim9skk_selectable*
 	選択できる変換候補がある場合true、それ以外の場合false
