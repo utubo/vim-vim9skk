@@ -379,7 +379,7 @@ def I(c: string): string
       ->substitute($'^{g:vim9skk.marker_select}', '', '')
       ->substitute('.'->repeat(len(before) - 1) .. '$', '', '')
       ->AddStr(after)
-      ->ShowResent()
+      ->ShowRecent()
   endif
   return "\<BS>"->repeat(len(before) - 1) .. prefix .. after
 enddef
@@ -576,7 +576,7 @@ enddef
 #}}}
 
 # 予測変換ポップアップ {{{
-def ShowResent(_target: string): string
+def ShowRecent(_target: string): string
   var target = _target
   if mode ==# mode_hira || mode ==# mode_kata
     target = target->substitute('n$', 'ん', '')
