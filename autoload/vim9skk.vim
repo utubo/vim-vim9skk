@@ -247,13 +247,11 @@ enddef
 def SetMode(m: number)
   mode = m
   for [k, v] in save_lmap->items()
+    # `q`とか`l`とかのマッピングをオンオフ
     if m ==# mode_abbr || m ==# mode_alphabet
-      # `q`とか`l`とかを入力できるようにする
       MapForInput(k)
     else
-      # `q`とか`l`とかのマッピングを復活
       Unmap(k)
-      mapset('l', false, v)
     endif
   endfor
   if skkmode !=# skkmode_select
