@@ -669,7 +669,7 @@ def ReadJisyo(path: string): list<any>
   # 読み込んでスクリプトローカルにキャッシュする
   const [p, enc] = ToFullPathAndEncode(path)
   if !filereadable(p)
-    return []
+    return [[], enc]
   endif
   # iconvはWindowsですごく重いので、
   # 検索時に検索対象の方の文字コードを辞書にあわせる
@@ -678,7 +678,7 @@ def ReadJisyo(path: string): list<any>
   lines->sort()
   jisyo[path] = lines
   jisyo_encode[path] = enc
-  return [jisyo[path], jisyo_encode[path]]
+  return [lines, enc]
 enddef
 
 def WriteJisyo(lines: list<string>, path: string, flags: string = '')
