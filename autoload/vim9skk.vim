@@ -249,8 +249,8 @@ def ShowMode(popup_even_off: bool)
       line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
       time: g:vim9skk.mode_label_timeout,
     })
+    redraw
   endif
-  redraw
 enddef
 
 def CloseModePopup()
@@ -622,8 +622,10 @@ def PopupKouho()
 enddef
 
 def HighlightKouho()
-  win_execute(popup_kouho_id, $':{kouho_index + 1}')
-  redraw
+  if popup_kouho_id !=# 0
+    win_execute(popup_kouho_id, $':{kouho_index + 1}')
+    redraw
+  endif
 enddef
 
 def CloseKouho()
