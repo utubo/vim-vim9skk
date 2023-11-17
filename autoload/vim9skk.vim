@@ -38,7 +38,8 @@ const roma_table = [
   ['sya', 'しゃ'], ['syu', 'しゅ'], ['sye', 'しぇ'], ['syo', 'しょ'],
   ['sha', 'しゃ'], ['shu', 'しゅ'], ['she', 'しぇ'], ['sho', 'しょ'],
   ['tya', 'ちゃ'], ['tyu', 'ちゅ'], ['tyu', 'ちぇ'], ['tyo', 'ちょ'],
-  ['cha', 'ちゃ'], ['chu', 'ちゅ'], ['chu', 'ちぇ'], ['cho', 'ちょ'],
+  ['cha', 'ちゃ'], ['chu', 'ちゅ'], ['che', 'ちぇ'], ['cho', 'ちょ'],
+  ['tha', 'てゃ'], ['thi', 'てぃ'], ['thu', 'てゅ'], ['the', 'てぇ'], ['tho', 'てょ'],
   ['nya', 'にゃ'], ['nyu', 'にゅ'], ['nyo', 'にょ'],
   ['hya', 'ひゃ'], ['hyu', 'ひゅ'], ['hyo', 'ひょ'],
   ['mya', 'みゃ'], ['myu', 'みゅ'], ['myo', 'みょ'],
@@ -278,7 +279,7 @@ def ShowMode(popup_even_off: bool)
   CloseModePopup()
   if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || &iminsert ==# 1)
     popup_mode_id = popup_create(g:vim9skk_mode, {
-      col: mode() ==# 'c' ? 2 : 'cursor',
+      col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
       line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
       time: g:vim9skk.mode_label_timeout,
     })
@@ -291,6 +292,7 @@ def CloseModePopup()
   if !!popup_mode_id
     popup_close(popup_mode_id)
     popup_mode_id = 0
+    redraw
   endif
 enddef
 
@@ -311,7 +313,7 @@ def OnInsertLeave()
 enddef
 
 def OnCmdlineEnter()
-  if getcmdtype() =~# '[/?]'
+  if getcmdtype() =~# '[/?@]'
     ShowMode(false)
   else
     CloseModePopup()
@@ -622,6 +624,7 @@ enddef
 
 def HighlightKouho()
   win_execute(popup_kouho_id, $':{kouho_index + 1}')
+  redraw
 enddef
 
 def CloseKouho()
@@ -629,6 +632,7 @@ def CloseKouho()
   if popup_kouho_id !=# 0
     popup_close(popup_kouho_id)
     popup_kouho_id = 0
+    redraw
   endif
 enddef
 #}}}
@@ -686,10 +690,12 @@ enddef
 
 export def RegisterToUserJisyo(key: string): list<string>
   const save_mode = mode
+  const save_skkmode = skkmode
   const save_start_pos = start_pos
   const save_okuri = okuri
   var result = []
   try
+    skkmode = skkmode_direct
     const value = input($'ユーザー辞書に登録({key}): ')->trim()
     if !value
       echo 'キャンセルしました'
@@ -704,6 +710,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     endif
   finally
     mode = save_mode
+    skkmode = save_skkmode
     start_pos = save_start_pos
     okuri = save_okuri
   endtry
