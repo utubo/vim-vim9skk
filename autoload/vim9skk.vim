@@ -155,7 +155,13 @@ enddef
 
 # 順番を保ったままuniqする
 def Uniq(list: list<any>): list<any>
-  return list->filter((i, v) => list->index(v) ==# i)
+  var result = []
+  for a in list
+    if result->index(a) ==# -1
+      result->add(a)
+    endif
+  endfor
+  return list
 enddef
 # }}}
 
