@@ -155,7 +155,13 @@ enddef
 
 # 順番を保ったままuniqする
 def Uniq(list: list<any>): list<any>
-  return copy(list)->filter((i, v) => list->index(v, i + 1) ==# -1)
+  var result = []
+  for a in list
+    if result->index(a) ==# -1
+      result->add(a)
+    endif
+  endfor
+  return result
 enddef
 # }}}
 
@@ -530,7 +536,7 @@ def GetAllKouho(target: string)
   if len(kouho) ==# 1
     kouho = RegisterToUserJisyo(henkan_key)
   endif
-  kouho->Uniq()
+  kouho = kouho->Uniq()
 enddef
 
 def Cyclic(a: number, max: number): number
@@ -585,7 +591,7 @@ def ShowResent(_target: string): string
   if len(kouho) ==# 1
     return ''
   endif
-  kouho->Uniq()
+  kouho = kouho->Uniq()
   kouho_index = 0
   okuri = ''
   PopupKouho()
