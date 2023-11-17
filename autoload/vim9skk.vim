@@ -278,7 +278,8 @@ def OnInsertLeave()
 enddef
 
 def OnCmdlineEnter()
-  if getcmdtype() =~# '[/?@]'
+  # '@'も含めたいがredrawでecho出力がクリアされてしまう
+  if getcmdtype() =~# '[/?]'
     ShowMode(false)
   else
     CloseModePopup()
@@ -694,6 +695,7 @@ export def RegisterToUserJisyo(key: string): list<string>
   var result = []
   try
     skkmode = skkmode_direct
+    autocmd vim9skk CmdlineEnter * ++once ShowMode(false)
     const value = input($'ユーザー辞書に登録({key}): ')->trim()
     if !value
       echo 'キャンセルしました'
