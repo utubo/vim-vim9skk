@@ -160,39 +160,6 @@ enddef
 # }}}
 
 # 基本 {{{
-def EscapeForMap(key: string): string
-  return key
-    ->substitute('<', '<LT>', 'g')
-    ->substitute('|', '<Bar>', 'g')
-    ->substitute(' ', '<Space>', 'g')
-    ->substitute('\', '<Bslash>', 'g')
-enddef
-
-def MapForInput(key: string)
-  const k = EscapeForMap(key)
-  const v = key->escape('"|\\')
-  execute $'lnoremap <buffer> <script> <expr> {k} I("{v}")'
-enddef
-
-def Unmap(key: string)
-  const k = EscapeForMap(key)
-  silent! execute $'lunmap <buffer> <script> <expr> {k}'
-enddef
-
-# <buffer>にマッピングしないと`imap <buffer>`に取られちゃう
-def MapToBuf()
-  for k in abbr_table + '[],.'->split('.\zs')
-    const m = maparg(k, 'l', false, true)
-    if !!m
-      save_lmap[k] = m
-    else
-      MapForInput(k)
-    endif
-  endfor
-  lnoremap <buffer> <script> <expr> <Space> OnSpace()
-  lnoremap <buffer> <script> <expr> <CR> OnCR()
-enddef
-
 def Init()
   MapToBuf()
   noremap! <script> <expr> <Plug>(vim9skk-kana) ToggleMode(mode_kata)
@@ -320,6 +287,39 @@ enddef
 # }}}
 
 # キー入力 {{{
+def EscapeForMap(key: string): string
+  return key
+    ->substitute('<', '<LT>', 'g')
+    ->substitute('|', '<Bar>', 'g')
+    ->substitute(' ', '<Space>', 'g')
+    ->substitute('\', '<Bslash>', 'g')
+enddef
+
+def MapForInput(key: string)
+  const k = EscapeForMap(key)
+  const v = key->escape('"|\\')
+  execute $'lnoremap <buffer> <script> <expr> {k} I("{v}")'
+enddef
+
+def Unmap(key: string)
+  const k = EscapeForMap(key)
+  silent! execute $'lunmap <buffer> <script> <expr> {k}'
+enddef
+
+# <buffer>にマッピングしないと`imap <buffer>`に取られちゃう
+def MapToBuf()
+  for k in abbr_table + '[],.'->split('.\zs')
+    const m = maparg(k, 'l', false, true)
+    if !!m
+      save_lmap[k] = m
+    else
+      MapForInput(k)
+    endif
+  endfor
+  lnoremap <buffer> <script> <expr> <Space> OnSpace()
+  lnoremap <buffer> <script> <expr> <CR> OnCR()
+enddef
+
 def I(c: string): string
   var prefix = ''
   # 候補を選択中の場合
