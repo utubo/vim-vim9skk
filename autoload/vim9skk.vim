@@ -225,6 +225,7 @@ def SetMode(m: number)
     CloseKouho()
   endif
   ShowMode(true)
+  doautocmd User Vim9skkModeChanged
 enddef
 
 def ShowMode(popup_even_off: bool)
@@ -250,7 +251,6 @@ def ShowMode(popup_even_off: bool)
     })
   endif
   redraw
-  doautocmd User Vim9skkModeChanged
 enddef
 
 def CloseModePopup()
