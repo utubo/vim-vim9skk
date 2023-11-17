@@ -21,6 +21,7 @@ var okuri = ''
 var kouho = []
 var kouho_index = 0
 var jisyo = {}
+var jisyo_encode = {}
 var popup_mode_id = 0
 var popup_kouho_id = 0
 var save_lmap = {}
@@ -151,6 +152,7 @@ def Split(str: string, dlm: string): list<string>
   return i ==# - 1 ? [str, ''] : [str->strpart(0, i), str->strpart(i + 1)]
 enddef
 
+# 順番を保ったままuniqする
 def Uniq(list: list<any>): list<any>
   return list->filter((i, v) => list->index(v) ==# i)
 enddef
@@ -472,9 +474,8 @@ def StartSelect(): string
 enddef
 
 def GetKouhoFromJisyo(path: string, key: string): list<string>
-  const enc = ToFullPathAndEncode(path)[1]
+  const [lines, enc] = ReadJisyo(path)
   const head = $'{key} '->Iconv(&enc, enc)
-  const lines = ReadJisyo(path)
   const max = len(lines) - 1
   if max < 0
     return []
@@ -569,13 +570,13 @@ enddef
 
 # 予測変換ポップアップ {{{
 def ShowResent(_target: string): string
+  const [lines, enc] = ReadJisyo(g:vim9skk.jisyo_recent)
   var target = _target
   if mode ==# mode_hira || mode ==# mode_kata
     target = target->substitute('n$', 'ん', '')
   endif
-  const enc = ToFullPathAndEncode(g:vim9skk.jisyo_recent)[1]
   kouho = [target->Iconv(&enc, enc)]
-  for j in ReadJisyo(g:vim9skk.jisyo_recent)
+  for j in lines
     if j->StartsWith(target)
       kouho += j->Iconv(enc, &enc)->Split(' ')[1]->split('/')
     endif
@@ -642,45 +643,38 @@ def ToFullPathAndEncode(path: string): list<string>
   endif
 enddef
 
-def Iconv(line: string, from_enc: string, to_enc: string): string
-  return [line]->IconvLines(from_enc, to_enc)[0]
-enddef
-
-def IconvLines(lines: list<string>, from_enc: string, to_enc: string): list<string>
+def Iconv(str: string, from_enc: string, to_enc: string): string
   const f = from_enc ?? &enc
   const t = to_enc ?? &enc
-  if !lines || f ==# t
-    return lines
+  if !str || f ==# t
+    return str
   endif
-  var result = []
-  for l in lines
-    result->add(l->iconv(f, t))
-  endfor
-  return result
+  return str->iconv(f, t)
 enddef
 
-def ReadJisyo(path: string): list<string>
+def ReadJisyo(path: string): list<any>
   # キャッシュ済み
   if jisyo->has_key(path)
-    return jisyo[path]
+    return [jisyo[path], jisyo_encode[path]]
   endif
   # 読み込んでスクリプトローカルにキャッシュする
-  const p = ToFullPathAndEncode(path)[0]
+  const [p, enc] = ToFullPathAndEncode(path)
   if !filereadable(p)
     return []
   endif
-  # IconvLinesはWindowsですごく重いので、
+  # IconvはWindowsですごく重いので、
   # 検索時に検索対象の方の文字コードを辞書にあわせる
-  # var lines = readfile(p)->IconvLines(enc, &enc)
+  # var lines = readfile(p)->Iconv配列対応版(enc, &enc)
   var lines = readfile(p)
   lines->sort()
   jisyo[path] = lines
-  return jisyo[path]
+  jisyo_encode[path] = enc
+  return [jisyo[path], jisyo_encode[path]]
 enddef
 
 def WriteJisyo(lines: list<string>, path: string, flags: string = '')
   const [p, enc] = ToFullPathAndEncode(path)
-  writefile(lines->IconvLines(&enc, enc), p, flags)
+  writefile(lines, p, flags)
 enddef
 
 export def RegisterToUserJisyo(key: string): list<string>
@@ -694,10 +688,10 @@ export def RegisterToUserJisyo(key: string): list<string>
       echo 'キャンセルしました'
     else
       # ユーザー辞書に登録する
-      const newline = [$'{key} /{value}/']
-      jisyo[g:vim9skk.jisyo_user] = get(jisyo, g:vim9skk.jisyo_user, [])
-      jisyo[g:vim9skk.jisyo_user] += newline
-      WriteJisyo(newline, expand(g:vim9skk.jisyo_user), 'a')
+      const newline = $'{key} /{value}/'
+      const [lines, enc] = ReadJisyo(g:vim9skk.jisyo_user)
+      jisyo[g:vim9skk.jisyo_user] = lines + [newline->Iconv(&enc, enc)]
+      WriteJisyo([newline], expand(g:vim9skk.jisyo_user), 'a')
       echo '登録しました'
       result += [value]
     endif
@@ -710,15 +704,14 @@ export def RegisterToUserJisyo(key: string): list<string>
 enddef
 
 def RegisterToRecentJisyo(before: string, after: string)
-  var lines = get(jisyo, g:vim9skk.jisyo_recent, [])
+  # 新規に追加する行
   var afters = [after] + GetKouhoFromJisyo(g:vim9skk.jisyo_recent, before)
-  afters->Uniq()
-  const newline = $'{before} /{afters->join("/")}/'
-  const i = lines->indexof((i, v) => v->StartsWith($'{before} '))
-  if i !=# -1
-    lines->remove(i)
-  endif
-  jisyo[g:vim9skk.jisyo_recent] = [newline] + lines[: g:vim9skk.recent]
+  const newline = $'{before} /{afters->Uniq()->join("/")}/'
+  # 既存の行を削除してから先頭に追加する
+  var [lines, enc] = ReadJisyo(g:vim9skk.jisyo_recent)
+  const head = $'{before }'->Iconv(&enc, enc)
+  lines->filter((i, v) => !v->StartsWith(head))
+  jisyo[g:vim9skk.jisyo_recent] = [newline->Iconv(&enc, enc)] + lines[: g:vim9skk.recent]
 enddef
 
 def SaveRecentlies()
