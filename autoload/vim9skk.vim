@@ -673,7 +673,7 @@ enddef
 def ReadJisyo(path: string): list<any>
   # キャッシュ済み
   if jisyo->has_key(path)
-    return [jisyo[path], jisyo_encode[path]]
+    return [jisyo[path], get(jisyo_encode, path, '')]
   endif
   # 読み込んでスクリプトローカルにキャッシュする
   const [p, enc] = ToFullPathAndEncode(path)
