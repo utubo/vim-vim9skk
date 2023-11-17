@@ -494,8 +494,8 @@ def GetKouhoFromJisyo(path: string, key: string): list<string>
       endfor
       return result
     endif
-    d /= 2
-    if !d
+    d = d / 2 + d % 2
+    if d <= 1
       if !!limit
         # 残りの探索が奇数個だと取り漏らすので、あと1回だけ探索がんばる
         limit = 1
