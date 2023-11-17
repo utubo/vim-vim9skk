@@ -109,6 +109,8 @@ g:vim9skk					*g:vim9skk*
 	popup_maxheight
 		変換候補の最大表示行数
 		0で非表示
+	search_limit
+		候補探索の試行上限です
 	disable_default_mappings
 		起動時にデフォルトのキーマップを割り当てないようにします
 
@@ -135,6 +137,7 @@ g:vim9skk					*g:vim9skk*
 		},
 		mode_label_timeout: 3000,
 		popup_maxheight: 20,
+		search_limit: 100,
 		disable_default_mappings: false,
 
 ------------------------------------------------------------------------------
@@ -168,7 +171,7 @@ KEY-MAPPINGS					*vim9skk-key-mappings*
 	選択モード中の`x`と同様
 
 						*vim9skk-default-key-mappings*
-
+default key mappings
 >
    noremap! <C-j> <Plug>(vim9skk-toggle)
    lnoremap <C-j> <Plug>(vim9skk-toggle)
@@ -186,6 +189,9 @@ COMMANDS					*vim9skk-commands*
 
 :Vim9skkRefreshJisyo				*:Vim9skkRefreshJisyo*
 	辞書を再読み込みします
+
+:Vim9skkRegisterToUserJisyo {見出し}		*:Vim9skkRegisterToUserJisyo*
+	ユーザー辞書に登録します
 
 
 ------------------------------------------------------------------------------
