@@ -206,7 +206,14 @@ export def ToggleSkk(): string
   if !initialized
     Init()
   endif
-  &iminsert = &iminsert ==# 1 ? 0 : 1
+  const m = mode()
+  if m ==# 'i'
+    &iminsert = &iminsert ==# 1 ? 0 : 1
+  elseif m ==# 'c'
+    &imcmdline = !&imcmdline
+  elseif &imsearch !=# -1
+    &imsearch = &imsearch ==# 1 ? 0 : 1
+  endif
   ToDirectMode()
   if mode ==# mode_abbr || mode ==# mode_alphabet
     SetMode(mode_hira)
@@ -234,8 +241,20 @@ def SetMode(m: number)
   doautocmd User Vim9skkModeChanged
 enddef
 
+def GetIM(): number
+  const m = mode()
+  if m ==# 'i'
+    return &iminsert
+  elseif m ==# 'c'
+    return &imcmdline ? 1 : 0
+  else
+    return &imsearch ==# -1 ? &iminsert : &imsearch
+  endif
+enddef
+
 def ShowMode(popup_even_off: bool)
-  if &iminsert !=# 1
+  const im = GetIM()
+  if im !=# 1
     g:vim9skk_mode = g:vim9skk.mode_label.off
   elseif mode ==# mode_kata
     g:vim9skk_mode = g:vim9skk.mode_label.kata
@@ -249,7 +268,7 @@ def ShowMode(popup_even_off: bool)
     g:vim9skk_mode = g:vim9skk.mode_label.hira
   endif
   CloseModePopup()
-  if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || &iminsert ==# 1)
+  if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || im ==# 1)
     popup_mode_id = popup_create(g:vim9skk_mode, {
       col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
       line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
