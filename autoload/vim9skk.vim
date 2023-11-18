@@ -29,7 +29,7 @@ var imcmdline = 0
 
 const roma_table = [
   # 4文字
-  ['ltsu', 'っ'],
+  ['ltsu', 'っ'], ['xtsu', 'っ'],
   # 3文字
   ['gya', 'ぎゃ'], ['gyu', 'ぎゅ'], ['gyo', 'ぎょ'],
   ['zya', 'じゃ'], ['zyu', 'じゅ'], ['zyo', 'じょ'],
@@ -379,7 +379,7 @@ def I(c: string): string
   # ローマ字をひらがなに変換する
   var before = ''
   var after = ''
-  const key = (GetLine()->matchstr($'.\?.\%{GetPos()}c') .. c)->tolower()
+  const key = (GetLine()->matchstr($'.\?.\?.\%{GetPos()}c') .. c)->tolower()
   for r in roma_table
     if key[-len(r[0]) :] ==# r[0]
       before = r[0]
