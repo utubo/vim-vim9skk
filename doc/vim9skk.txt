@@ -176,6 +176,7 @@ KEY-MAPPINGS					*vim9skk-key-mappings*
 
 						*vim9skk-default-key-mappings*
 default key mappings
+⚠lmapの利用をやめる予定です！
 >
    noremap! <C-j> <Plug>(vim9skk-toggle)
    lnoremap <C-j> <Plug>(vim9skk-toggle)
