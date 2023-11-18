@@ -25,6 +25,7 @@ var jisyo_encode = {}
 var popup_mode_id = 0
 var popup_kouho_id = 0
 var save_lmap = {}
+var imcmdline = 0
 
 const roma_table = [
   # 3文字
@@ -207,8 +208,10 @@ export def ToggleSkk(): string
     Init()
   endif
   const m = mode()
-  if m ==# 'i' || m ==# 'c'
+  if m ==# 'i'
     &iminsert = &iminsert ==# 1 ? 0 : 1
+  elseif m ==# 'c'
+    imcmdline = imcmdline ==# 1 ? 0 : 1
   elseif &imsearch !=# -1
     &imsearch = &imsearch ==# 1 ? 0 : 1
   endif
@@ -241,8 +244,10 @@ enddef
 
 def GetIM(): number
   const m = mode()
-  if m ==# 'i' || m ==# 'c'
+  if m ==# 'i'
     return &iminsert
+  elseif m ==# 'c'
+    return imcmdline
   else
     return &imsearch ==# -1 ? &iminsert : &imsearch
   endif
@@ -305,8 +310,8 @@ def OnCmdlineEnter()
   else
     CloseModePopup()
   endif
-  if getcmdtype() ==# 'c' && !&imcmdline
-    &iminsert = 0
+  if getcmdtype() ==# 'c'
+    imcmdline = 0
   endif
 enddef
 # }}}
