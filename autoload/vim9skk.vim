@@ -39,7 +39,7 @@ const roma_table = [
   ['pya', 'ぴゃ'], ['pyu', 'ぴゅ'], ['pyo', 'ぴょ'],
   ['kya', 'きゃ'], ['kyu', 'きゅ'], ['kyo', 'きょ'],
   ['sya', 'しゃ'], ['syu', 'しゅ'], ['sye', 'しぇ'], ['syo', 'しょ'],
-  ['sha', 'しゃ'], ['shu', 'しゅ'], ['she', 'しぇ'], ['sho', 'しょ'],
+  ['sha', 'しゃ'], ['shi', 'し'], ['shu', 'しゅ'], ['she', 'しぇ'], ['sho', 'しょ'],
   ['tya', 'ちゃ'], ['tyu', 'ちゅ'], ['tyu', 'ちぇ'], ['tyo', 'ちょ'],
   ['cha', 'ちゃ'], ['chi', 'ち'], ['chu', 'ちゅ'], ['che', 'ちぇ'], ['cho', 'ちょ'],
   ['tha', 'てゃ'], ['thi', 'てぃ'], ['thu', 'てゅ'], ['the', 'てぇ'], ['tho', 'てょ'],
@@ -421,7 +421,7 @@ def SetMidasi(): string
   endif
   skkmode = skkmode_midasi
   start_pos = GetPos()
-  return '▽'
+  return g:vim9skk.marker_midasi
 enddef
 
 def OnSpace(): string
