@@ -207,10 +207,8 @@ export def ToggleSkk(): string
     Init()
   endif
   const m = mode()
-  if m ==# 'i'
+  if m ==# 'i' || m ==# 'c'
     &iminsert = &iminsert ==# 1 ? 0 : 1
-  elseif m ==# 'c'
-    &imcmdline = !&imcmdline
   elseif &imsearch !=# -1
     &imsearch = &imsearch ==# 1 ? 0 : 1
   endif
@@ -243,10 +241,8 @@ enddef
 
 def GetIM(): number
   const m = mode()
-  if m ==# 'i'
+  if m ==# 'i' || m ==# 'c'
     return &iminsert
-  elseif m ==# 'c'
-    return &imcmdline ? 1 : 0
   else
     return &imsearch ==# -1 ? &iminsert : &imsearch
   endif
@@ -308,6 +304,9 @@ def OnCmdlineEnter()
     ShowMode(false)
   else
     CloseModePopup()
+  endif
+  if getcmdtype() ==# 'c' && !&imcmdline
+    &iminsert = 0
   endif
 enddef
 # }}}
