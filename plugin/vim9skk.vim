@@ -28,6 +28,7 @@ g:vim9skk_mode = g:vim9skk.mode_label.off
 g:vim9skk_selectable = false
 
 command! Vim9skkRefreshJisyo vim9skk#RefreshJisyo()
+command! Vim9skkTerminalInput vim9skk#TerminalInput()
 command! -nargs=1 Vim9skkRegisterToUserJisyo vim9skk#RegisterToUserJisyo(<q-args>)
 command! -nargs=* Vim9skkMap vim9skk#Vim9skkMap(<q-args>)
 
@@ -39,6 +40,7 @@ if g:vim9skk.disable_default_mappings
   finish
 endif
 noremap! <C-j> <Plug>(vim9skk-toggle)
+tnoremap <C-j> <ScriptCmd>Vim9skkTerminalInput<CR>
 Vim9skkMap q     <Plug>(vim9skk-kana)
 Vim9skkMap <C-q> <Plug>(vim9skk-hankaku)
 Vim9skkMap L     <Plug>(vim9skk-alphabet)

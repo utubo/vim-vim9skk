@@ -325,13 +325,12 @@ enddef
 # キー入力 {{{
 def Map(m: string)
   execute $'noremap! {m}'
-  # execute $'tnoremap {m}' # TODO: tnoremapは闇が深い
 enddef
 
 export def Vim9skkMap(m: string)
   var key = ''
   for a in m->split('\\\@<! ')
-    if a[0] != '<'
+    if a[0] !=# '<'
       key = a
       break
     endif
@@ -378,7 +377,6 @@ def UnmapAll()
   b:vim9skk_keymapped = 0
   for m in maplist()->filter((_, m) => m.script) + vim9skkmap->keys()
     silent! execute $'unmap! <buffer> <script> {m.lhs}'
-    # silent! execute $'tunmap <buffer> <script> {m.lhs}' # TODO: tnoremapは闇が深い
   endfor
   if !!get(b:, 'vim9skk_saved_keymap', {})
     for m in b:vim9skk_saved_keymap
@@ -808,6 +806,16 @@ enddef
 export def RefreshJisyo()
   jisyo = {}
   echo '辞書をリフレッシュしました'
+enddef
+#}}}
+
+# terminal {{{
+export def TerminalInput()
+  autocmd CmdlineEnter * ++once Enable()
+  const value = input($'terminalに入力: ')->trim()
+  if !!value
+    feedkeys(value, 'int')
+  endif
 enddef
 #}}}
 

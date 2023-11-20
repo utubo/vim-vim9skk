@@ -201,6 +201,9 @@ COMMANDS					*vim9skk-commands*
 	vim9skkが有効な場合のみ作用するマッピングを設定します
 	このマッピング内で`<script>`は使えません
 
+:Vim9skkTerminalInput				*:Vim9skkTerminalInput*
+	terminalに入力するための入力プロンプトを表示します
+
 :Vim9skkRefreshJisyo				*:Vim9skkRefreshJisyo*
 	辞書を再読み込みします
 
