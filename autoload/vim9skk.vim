@@ -799,7 +799,7 @@ def RegisterToRecentJisyo(before: string, after: string)
 enddef
 
 def SaveRecentlies()
-  var lines = ReadJisyo(g:vim9skk.jisyo_recent)
+  var [lines, _] = ReadJisyo(g:vim9skk.jisyo_recent)
   if !!lines
     WriteJisyo(lines, g:vim9skk.jisyo_recent)
   endif
