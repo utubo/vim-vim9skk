@@ -1,11 +1,11 @@
 vim9script
 
 # スクリプトローカル変数 {{{
-const mode_hira = 0
-const mode_kata = 1
-const mode_hankaku = 2
-const mode_alphabet = 3
-const mode_abbr = 4
+const mode_hira = 1
+const mode_kata = 2
+const mode_hankaku = 3
+const mode_alphabet = 4
+const mode_abbr = 5
 
 const skkmode_direct = 0
 const skkmode_midasi = 1
@@ -24,8 +24,7 @@ var jisyo = {}
 var jisyo_encode = {}
 var popup_mode_id = 0
 var popup_kouho_id = 0
-var save_lmap = {}
-var imcmdline = 0
+var vim9skkmap = {}
 
 const roma_table = [
   # 4文字
@@ -76,7 +75,12 @@ const roma_table = [
   ['a', 'あ'], ['i', 'い'], ['u', 'う'], ['e', 'え'], ['o', 'お'],
   ['-', 'ー'], ['.', '。'], [',', '、'], ['!', '！'], ['?', '？'], ['/', '・'], ['~', '～'],
 ]
-# {か:'k'}みたいなdict。
+
+# roma_tableのキーの一覧
+# Init()で作る
+var roma_keys = []
+
+# {か:'k'}みたいなdict
 # 変換時に「けんさく*する」→「けんさくs」というふうに辞書を検索する時に使う
 # Init()で作る
 var okuri_table = {}
@@ -170,16 +174,19 @@ enddef
 # }}}
 
 # 基本 {{{
+def MapPlugKey(key: string, f: string)
+  Map($'<script> <Plug>({key}) <ScriptCmd>{f}->feedkeys("nit")<CR>')
+enddef
+
 def Init()
-  MapToBuf()
-  noremap! <script> <expr> <Plug>(vim9skk-kana) ToggleMode(mode_kata)
-  noremap! <script> <expr> <Plug>(vim9skk-hankaku) ToggleMode(mode_hankaku)
-  noremap! <script> <expr> <Plug>(vim9skk-alphabet) ToggleMode(mode_alphabet)
-  noremap! <script> <expr> <Plug>(vim9skk-abbr) ToggleAbbr()
-  noremap! <script> <Plug>(vim9skk-hira) <ScriptCmd>SetMode(mode_hira)<CR>
-  noremap! <script> <expr> <Plug>(vim9skk-midasi) SetMidasi()
-  noremap! <script> <expr> <Plug>(vim9skk-prev) Select(-1)
-  noremap! <script> <expr> <Plug>(vim9skk-next) Select(1)
+  MapPlugKey('vim9skk-kana',     'ToggleMode(mode_kata)')
+  MapPlugKey('vim9skk-hankaku',  'ToggleMode(mode_hankaku)')
+  MapPlugKey('vim9skk-alphabet', 'ToggleMode(mode_alphabet)')
+  MapPlugKey('vim9skk-abbr',     'ToggleAbbr()')
+  MapPlugKey('vim9skk-hira',     'SetMode(mode_hira)')
+  MapPlugKey('vim9skk-midasi',   'SetMidasi()')
+  MapPlugKey('vim9skk-prev',     'Select(-1)')
+  MapPlugKey('vim9skk-next',     'Select(1)')
   augroup vim9skk
     autocmd!
     autocmd BufEnter * MapToBuf()
@@ -189,8 +196,11 @@ def Init()
     autocmd CmdlineLeave * CloseKouho()
     autocmd VimLeave * SaveRecentlies()
   augroup END
-  for kv in roma_table
-    okuri_table[kv[1]->strcharpart(0, 1)] = kv[0][0]
+  for [k, v] in roma_table
+    okuri_table[v->strcharpart(0, 1)] = k[0]
+  endfor
+  for k in okuri_table->values()
+    roma_keys += [k, k->toupper()]->uniq()
   endfor
   SetMode(mode_hira)
   initialized = true
@@ -200,65 +210,59 @@ def ToDirectMode(s: string = ''): string
   skkmode = skkmode_direct
   start_pos = GetPos()
   CloseKouho()
-  if mode ==# mode_abbr
-    SetMode(mode_hira)
-  endif
   return s
 enddef
 
-export def ToggleSkk(): string
+export def Enable()
+  if g:vim9skk_enable
+    return
+  endif
+  g:vim9skk_enable = true
   if !initialized
     Init()
   endif
-  const m = mode()
-  if m ==# 'i'
-    &iminsert = &iminsert ==# 1 ? 0 : 1
-  elseif m ==# 'c'
-    imcmdline = imcmdline ==# 1 ? 0 : 1
-  elseif &imsearch !=# -1
-    &imsearch = &imsearch ==# 1 ? 0 : 1
-  endif
+  MapToBuf()
   ToDirectMode()
   if mode ==# mode_abbr || mode ==# mode_alphabet
     SetMode(mode_hira)
-    return ''
   else
     ShowMode(true)
-    return "\<C-^>"
   endif
+  silent! doautocmd User Vim9skkEnabled
 enddef
 
-def SetMode(m: number)
-  mode = m
-  for [k, v] in save_lmap->items()
-    # `q`とか`l`とかのマッピングをオンオフ
-    if m ==# mode_abbr || m ==# mode_alphabet
-      MapForInput(k)
+export def Disable(popup_even_off: bool = true)
+  g:vim9skk_enable = false
+  UnmapAll()
+  ShowMode(popup_even_off)
+  silent! doautocmd User Vim9skkDisbaled
+enddef
+
+export def ToggleSkk(): string
+  if g:vim9skk_enable
+    if mode ==# mode_abbr || mode ==# mode_alphabet
+      SetMode(mode_hira)
     else
-      Unmap(k)
+      Disable()
     endif
-  endfor
+  else
+    Enable()
+  endif
+  return ''
+enddef
+
+def SetMode(m: number): string
+  mode = m
   if skkmode !=# skkmode_select
     CloseKouho()
   endif
   ShowMode(true)
   doautocmd User Vim9skkModeChanged
-enddef
-
-def GetIM(): number
-  const m = mode()
-  if m ==# 'i'
-    return &iminsert
-  elseif m ==# 'c'
-    return imcmdline
-  else
-    return &imsearch ==# -1 ? &iminsert : &imsearch
-  endif
+  return ''
 enddef
 
 def ShowMode(popup_even_off: bool)
-  const im = GetIM()
-  if im !=# 1
+  if !g:vim9skk_enable
     g:vim9skk_mode = g:vim9skk.mode_label.off
   elseif mode ==# mode_kata
     g:vim9skk_mode = g:vim9skk.mode_label.kata
@@ -272,7 +276,7 @@ def ShowMode(popup_even_off: bool)
     g:vim9skk_mode = g:vim9skk.mode_label.hira
   endif
   CloseModePopup()
-  if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || im ==# 1)
+  if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || g:vim9skk_enable)
     popup_mode_id = popup_create(g:vim9skk_mode, {
       col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
       line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
@@ -310,16 +314,31 @@ def OnCmdlineEnter()
   # '@'も含めたいがredrawでecho出力がクリアされてしまう
   if getcmdtype() =~# '[/?]'
     ShowMode(false)
+  elseif getcmdtype() ==# ':'
+    Disable(false)
   else
     CloseModePopup()
-  endif
-  if getcmdtype() ==# 'c'
-    imcmdline = 0
   endif
 enddef
 # }}}
 
 # キー入力 {{{
+def Map(m: string)
+  execute $'noremap! {m}'
+  # execute $'tnoremap {m}' # TODO: tnoremapは闇が深い
+enddef
+
+export def Vim9skkMap(m: string)
+  var key = ''
+  for a in m->split('\\\@<! ')
+    if a[0] != '<'
+      key = a
+      break
+    endif
+  endfor
+  vim9skkmap[key] = m
+enddef
+
 def EscapeForMap(key: string): string
   return key
     ->substitute('<', '<LT>', 'g')
@@ -328,29 +347,45 @@ def EscapeForMap(key: string): string
     ->substitute('\', '<Bslash>', 'g')
 enddef
 
-def MapForInput(key: string)
-  const k = EscapeForMap(key)
-  const v = key->escape('"|\\')
-  execute $'lnoremap <buffer> <script> <expr> {k} I("{v}")'
-enddef
-
-def Unmap(key: string)
-  const k = EscapeForMap(key)
-  silent! execute $'lunmap <buffer> <script> <expr> {k}'
-enddef
-
-# <buffer>にマッピングしないと`imap <buffer>`に取られちゃう
+# <buffer>にマッピングしないと他のプラグインに取られちゃう
 def MapToBuf()
-  for k in abbr_table + '[],.'->split('.\zs')
-    const m = maparg(k, 'l', false, true)
-    if !!m
-      save_lmap[k] = m
-    else
-      MapForInput(k)
-    endif
+  if !g:vim9skk_enable
+    return
+  endif
+  if get(b:, 'vim9skk_keymapped', 0) ==# mode
+    return
+  endif
+  UnmapAll()
+  b:vim9skk_saved_keymap = maplist()->filter((_, m) => m.buffer)
+  b:vim9skk_keymapped = mode
+  const use_roma = mode ==# mode_hira || mode ==# mode_kata || mode ==# mode_hankaku
+  for key in use_roma ? roma_keys : abbr_table
+    const k = key->EscapeForMap()
+    const v = key->escape('"|\\')
+    Map($'<buffer> <script> {k} <ScriptCmd>I("{v}")->feedkeys("nit")<CR>')
   endfor
-  lnoremap <buffer> <script> <expr> <Space> OnSpace()
-  lnoremap <buffer> <script> <expr> <CR> OnCR()
+  for [_, m] in vim9skkmap->items()
+    Map($'<buffer> {m}')
+  endfor
+  Map('<buffer> <script> <Space> <ScriptCmd>OnSpace()->feedkeys("nit")<CR>')
+  Map('<buffer> <script> <CR> <ScriptCmd>OnCR()->feedkeys("nit")<CR>')
+enddef
+
+def UnmapAll()
+  if !get(b:, 'vim9skk_keymapped', 0)
+    return
+  endif
+  b:vim9skk_keymapped = 0
+  for m in maplist()->filter((_, m) => m.script) + vim9skkmap->keys()
+    silent! execute $'unmap! <buffer> <script> {m.lhs}'
+    # silent! execute $'tunmap <buffer> <script> {m.lhs}' # TODO: tnoremapは闇が深い
+  endfor
+  if !!get(b:, 'vim9skk_saved_keymap', {})
+    for m in b:vim9skk_saved_keymap
+      mapset(m)
+    endfor
+    b:vim9skk_saved_keymap = {}
+  endif
 enddef
 
 def I(c: string): string
@@ -764,7 +799,7 @@ def RegisterToRecentJisyo(before: string, after: string)
 enddef
 
 def SaveRecentlies()
-  var lines = get(jisyo, g:vim9skk.jisyo_recent, [])
+  var lines = ReadJisyo(g:vim9skk.jisyo_recent)
   if !!lines
     WriteJisyo(lines, g:vim9skk.jisyo_recent)
   endif

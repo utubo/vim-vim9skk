@@ -147,6 +147,12 @@ g:vim9skk					*g:vim9skk*
 ------------------------------------------------------------------------------
 KEY-MAPPINGS					*vim9skk-key-mappings*
 
+<Plug>(vim9skk-enable)				*<Plug>(vim9skk-enable)*
+	vim9skkの有効にします
+
+<Plug>(vim9skk-disable)				*<Plug>(vim9skk-disable)*
+	vim9skkの無効にします
+
 <Plug>(vim9skk-toggle)				*<Plug>(vim9skk-toggle)*
 	vim9skkのオンオフをトグルします
 	全角英数モードやabbrモードの場合は、ひらがなモードに切り替えます
@@ -176,21 +182,24 @@ KEY-MAPPINGS					*vim9skk-key-mappings*
 
 						*vim9skk-default-key-mappings*
 default key mappings
-⚠lmapの利用をやめる予定です！
 >
    noremap! <C-j> <Plug>(vim9skk-toggle)
-   lnoremap <C-j> <Plug>(vim9skk-toggle)
-   lnoremap q     <Plug>(vim9skk-kana)
-   lnoremap <C-q> <Plug>(vim9skk-hankaku)
-   lnoremap L     <Plug>(vim9skk-alphabet)
-   lnoremap /     <Plug>(vim9skk-abbr)
-   lnoremap Q     <Plug>(vim9skk-midasi)
-   lnoremap <expr> <Tab> g:vim9skk_selectable ? '<Plug>(vim9skk-next)' : '<TAB>'
-   lnoremap <S-Tab> <Plug>(vim9skk-prev)
+   Vim9skkMap <C-j> <Plug>(vim9skk-toggle)
+   Vim9skkMap q     <Plug>(vim9skk-kana)
+   Vim9skkMap <C-q> <Plug>(vim9skk-hankaku)
+   Vim9skkMap L     <Plug>(vim9skk-alphabet)
+   Vim9skkMap /     <Plug>(vim9skk-abbr)
+   Vim9skkMap Q     <Plug>(vim9skk-midasi)
+   Vim9skkMap <expr> <Tab> g:vim9skk_selectable ? '<Plug>(vim9skk-next)' : '<TAB>'
+   Vim9skkMap <S-Tab> <Plug>(vim9skk-prev)
 <
 
 ------------------------------------------------------------------------------
 COMMANDS					*vim9skk-commands*
+
+:Vim9skkMap					*:Vim9skkMap*
+	vim9skkが有効な場合のみ作用するマッピングを設定します
+	このマッピング内で`<script>`は使えません
 
 :Vim9skkRefreshJisyo				*:Vim9skkRefreshJisyo*
 	辞書を再読み込みします
