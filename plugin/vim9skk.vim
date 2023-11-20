@@ -46,6 +46,7 @@ Vim9skkMap <C-q> <Plug>(vim9skk-hankaku)
 Vim9skkMap L     <Plug>(vim9skk-alphabet)
 Vim9skkMap /     <Plug>(vim9skk-abbr)
 Vim9skkMap Q     <Plug>(vim9skk-midasi)
+Vim9skkMap <C-g> <Plug>(vim9skk-cancel)
 Vim9skkMap <expr> <Tab> g:vim9skk_selectable ? '<Plug>(vim9skk-next)' : '<TAB>'
 Vim9skkMap <S-Tab> <Plug>(vim9skk-prev)
 

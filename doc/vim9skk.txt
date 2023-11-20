@@ -180,6 +180,9 @@ KEY-MAPPINGS					*vim9skk-key-mappings*
 	前の候補を選択します
 	選択モード中の`x`と同様
 
+<Plug>(vim9skk-cancel)				*<Plug>(vim9skk-cancel)*
+	一番上の候補を選択します
+
 						*vim9skk-default-key-mappings*
 default key mappings
 >
@@ -190,6 +193,7 @@ default key mappings
    Vim9skkMap L     <Plug>(vim9skk-alphabet)
    Vim9skkMap /     <Plug>(vim9skk-abbr)
    Vim9skkMap Q     <Plug>(vim9skk-midasi)
+   Vim9skkMap <C-g> <Plug>(vim9skk-cancel)
    Vim9skkMap <expr> <Tab> g:vim9skk_selectable ? '<Plug>(vim9skk-next)' : '<TAB>'
    Vim9skkMap <S-Tab> <Plug>(vim9skk-prev)
 <

@@ -187,6 +187,7 @@ def Init()
   MapPlugKey('vim9skk-midasi',   'SetMidasi()')
   MapPlugKey('vim9skk-prev',     'Select(-1)')
   MapPlugKey('vim9skk-next',     'Select(1)')
+  MapPlugKey('vim9skk-cancel',   'Select(-kouho_index)')
   augroup vim9skk
     autocmd!
     autocmd BufEnter * MapToBuf()
@@ -330,12 +331,13 @@ enddef
 export def Vim9skkMap(m: string)
   var key = ''
   for a in m->split('\\\@<! ')
-    if a[0] !=# '<'
+    if ['<buffer>', '<nowait>', '<silent>', '<special>', '<script>', '<expr>', '<unique>']->index(a) ==# -1
       key = a
       break
     endif
   endfor
   vim9skkmap[key] = m
+  g:a = vim9skkmap
 enddef
 
 def EscapeForMap(key: string): string
