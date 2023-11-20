@@ -112,6 +112,7 @@ const abbr_table = ('0123456789' ..
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ..
   '!"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
 
+# tr()を使いたいけど、半角カナ濁点半濁点に対応しないといけないので自作
 def ConvChars(src: string, from_chars: list<string>, to_chars: list<string>): string
   var dest = []
   for c in src->split('.\zs')
