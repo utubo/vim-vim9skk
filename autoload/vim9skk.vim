@@ -331,6 +331,9 @@ enddef
 export def Vim9skkMap(m: string)
   var key = ''
   for a in m->split('\\\@<! ')
+    if a ==# '<script>'
+      echoe 'Vim9skkMapでは<script>は使用できません'
+    endif
     if ['<buffer>', '<nowait>', '<silent>', '<special>', '<script>', '<expr>', '<unique>']->index(a) ==# -1
       key = a
       break
