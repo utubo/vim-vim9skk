@@ -14,6 +14,7 @@ const skkmode_select = 2
 var initialized = false
 var mode = mode_hira
 var skkmode = skkmode_direct
+var enabled_pos = 0
 var start_pos = 0
 var pos_delta = 0 # 確定前後のカーソル位置の差
 var henkan_key = ''
@@ -214,6 +215,12 @@ def ToDirectMode(s: string = ''): string
   return s
 enddef
 
+def SetEnabledPos()
+  if g:vim9skk_enable
+    enabled_pos = GetPos()
+  endif
+enddef
+
 export def Enable()
   if g:vim9skk_enable
     return
@@ -224,6 +231,7 @@ export def Enable()
   endif
   MapToBuf()
   ToDirectMode()
+  SetEnabledPos()
   if mode ==# mode_abbr || mode ==# mode_alphabet
     SetMode(mode_hira)
     # ↓SetModeで実行しているのでここでは不要
@@ -301,6 +309,7 @@ enddef
 
 def OnInsertEnter()
   ShowMode(false)
+  SetEnabledPos()
 enddef
 
 def OnInsertLeave()
@@ -313,6 +322,7 @@ def OnInsertLeave()
     ))
     ToDirectMode()
   endif
+  SetEnabledPos()
 enddef
 
 def OnCmdlineEnter()
@@ -344,7 +354,6 @@ export def Vim9skkMap(m: string)
     endif
   endfor
   vim9skkmap[key] = m
-  g:a = vim9skkmap
 enddef
 
 def EscapeForMap(key: string): string
@@ -421,7 +430,11 @@ def I(c: string): string
   # ローマ字をひらがなに変換する
   var before = ''
   var after = ''
-  const key = (GetLine()->matchstr($'.\?.\?.\%{GetPos()}c') .. c)->tolower()
+  const key = GetLine()
+    ->substitute($'.\%{enabled_pos}c', ' ', '') # 有効になる前の文字は無視する
+    ->matchstr($'.\?.\?.\%{GetPos()}c')
+    ->AddStr(c)
+    ->tolower()
   for r in roman_table
     if key[-len(r[0]) :] ==# r[0]
       before = r[0]
