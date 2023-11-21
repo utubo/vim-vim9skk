@@ -226,8 +226,11 @@ export def Enable()
   ToDirectMode()
   if mode ==# mode_abbr || mode ==# mode_alphabet
     SetMode(mode_hira)
+    # ↓SetModeで実行しているのでここでは不要
+    #silent! doautocmd User Vim9skkModeChanged
   else
     ShowMode(true)
+    silent! doautocmd User Vim9skkModeChanged
   endif
   silent! doautocmd User Vim9skkEnabled
 enddef
@@ -236,6 +239,7 @@ export def Disable(popup_even_off: bool = true)
   g:vim9skk_enable = false
   UnmapAll()
   ShowMode(popup_even_off)
+  silent! doautocmd User Vim9skkModeChanged
   silent! doautocmd User Vim9skkDisbaled
 enddef
 
@@ -258,7 +262,7 @@ def SetMode(m: number): string
     CloseKouho()
   endif
   ShowMode(true)
-  doautocmd User Vim9skkModeChanged
+  silent! doautocmd User Vim9skkModeChanged
   return ''
 enddef
 
