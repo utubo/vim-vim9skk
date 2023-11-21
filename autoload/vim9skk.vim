@@ -648,7 +648,9 @@ def AddLeftForParen(p: string): string
 enddef
 
 def Complete(): string
-  RegisterToRecentJisyo(henkan_key, kouho[kouho_index])
+  if !!henkan_key && kouho_index < len(kouho)
+    RegisterToRecentJisyo(henkan_key, kouho[kouho_index])
+  endif
   return GetTarget()
     ->RemoveMarker()
     ->AddLeftForParen()
