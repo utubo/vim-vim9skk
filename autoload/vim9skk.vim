@@ -160,7 +160,7 @@ enddef
 
 # 基本 {{{
 def MapPlugKey(key: string, f: string)
-  Map($'<script> <Plug>({key}) <ScriptCmd>{f}->feedkeys("nit")<CR>')
+  execute $'map! <script> <Plug>({key}) <ScriptCmd>{f}->feedkeys("nit")<CR>'
 enddef
 
 def Init()
@@ -318,10 +318,6 @@ enddef
 # }}}
 
 # キー入力 {{{
-def Map(m: string)
-  execute $'map! {m}'
-enddef
-
 export def Vim9skkMap(m: string)
   var key = ''
   for a in m->split('\\\@<! ')
@@ -394,21 +390,21 @@ def MapToBuf()
     const k = key->EscapeForMap()
     const c = key->escape('"|\\')
     const v = value->escape('"|\\')
-    Map($'<buffer> <script> {k} <ScriptCmd>I("{c}", "{v}")->feedkeys("it")<CR>')
+    execute $'map! <buffer> <script> {k} <ScriptCmd>I("{c}", "{v}")->feedkeys("it")<CR>'
   endfor
   if s.use_roman
     for key in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
       const k = key->EscapeForMap()
       const c = key->escape('"|\\')
-      Map($'<buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{c}")->feedkeys("it")<CR>')
+      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{c}")->feedkeys("it")<CR>'
     endfor
   endif
   for m in vim9skkmap->values()
-    Map($'<buffer> {m.map}')
+    execute 'map! <buffer>' m.map
   endfor
   if mode !=# mode_alphabet
-    Map('<buffer> <script> <Space> <ScriptCmd>OnSpace()->feedkeys("nit")<CR>')
-    Map('<buffer> <script> <CR> <ScriptCmd>OnCR()->feedkeys("nit")<CR>')
+    map! <buffer> <script> <Space> <ScriptCmd>OnSpace()->feedkeys("nit")<CR>
+    map! <buffer> <script> <CR> <ScriptCmd>OnCR()->feedkeys("nit")<CR>
   endif
 enddef
 
