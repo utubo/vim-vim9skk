@@ -115,31 +115,17 @@ const abbr_chars = ('0123456789' ..
   '!"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
 
 # tr()を使いたいけど、半角カナ濁点半濁点に対応しないといけないので自作
-def ConvChars(src: string, from_chars: list<string>, to_chars: list<string>): string
+def ConvChars(str: string, from_chars: list<string>, to_chars: list<string>): string
   var dest = []
-  for c in src->split('.\zs')
+  for c in str->split('.\zs')
     const p = from_chars->index(c)
     dest += [p ==# - 1 ? c : to_chars[p]]
   endfor
   return dest->join('')
 enddef
 
-def SwapChars(src: string, a: list<string>, b: list<string>): string
-  var dest = []
-  for c in src->split('.\zs')
-    const p = a->index(c)
-    if p !=# -1
-      dest->add(b[p])
-      continue
-    endif
-    const q = b->index(c)
-    if q !=# -1
-      dest->add(a[q])
-      continue
-    endif
-    dest->add(c)
-  endfor
-  return dest->join('')
+def SwapChars(str: string, a: list<string>, b: list<string>): string
+  return str->ConvChars(a + b, b + a)
 enddef
 
 def GetLine(): string
