@@ -333,7 +333,7 @@ export def Vim9skkMap(m: string)
       break
     endif
   endfor
-  vim9skkmap[key] = m
+  vim9skkmap[key] = { lhs: key, map: m }
 enddef
 
 def EscapeForMap(key: string): string
@@ -403,8 +403,8 @@ def MapToBuf()
       Map($'<buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{c}")->feedkeys("it")<CR>')
     endfor
   endif
-  for [_, m] in vim9skkmap->items()
-    Map($'<buffer> {m}')
+  for m in vim9skkmap->values()
+    Map($'<buffer> {m.map}')
   endfor
   if mode !=# mode_alphabet
     Map('<buffer> <script> <Space> <ScriptCmd>OnSpace()->feedkeys("nit")<CR>')
@@ -417,8 +417,11 @@ def UnmapAll()
     return
   endif
   b:vim9skk_keymapped = 0
-  for m in maplist()->filter((_, m) => m.script) + vim9skkmap->keys()
-    silent! execute $'unmap! <buffer> <script> {m.lhs->EscapeForMap()}'
+  for m in maplist()->filter((_, m) => m.script) + vim9skkmap->values()
+    const lhs = m.lhs
+      ->substitute('|', '<BAR>', 'g')
+      ->substitute('\', '<Bslash>', 'g')
+    silent! execute $'unmap! <buffer> <script> {lhs}'
   endfor
   if !!get(b:, 'vim9skk_saved_keymap', {})
     for m in b:vim9skk_saved_keymap
