@@ -33,15 +33,15 @@ const roman_table = [
   # 3文字
   ['gya', 'ぎゃ'], ['gyu', 'ぎゅ'], ['gyo', 'ぎょ'],
   ['zya', 'じゃ'], ['zyu', 'じゅ'], ['zyo', 'じょ'],
-  ['dya', 'ぢゃ'], ['dyu', 'ぢゅ'], ['dyu', 'ぢぇ'], ['dyo', 'ぢょ'],
-  ['dha', 'ぢゃ'], ['dhu', 'ぢゅ'], ['dhu', 'ぢぇ'], ['dho', 'ぢょ'],
+  ['dya', 'ぢゃ'], ['dyu', 'ぢゅ'], ['dye', 'ぢぇ'], ['dyo', 'ぢょ'],
+  ['dha', 'ぢゃ'], ['dhu', 'ぢゅ'], ['dhe', 'ぢぇ'], ['dho', 'ぢょ'],
   ['bya', 'びゃ'], ['byu', 'びゅ'], ['byo', 'びょ'],
   ['pya', 'ぴゃ'], ['pyu', 'ぴゅ'], ['pyo', 'ぴょ'],
-  ['kya', 'きゃ'], ['kyu', 'きゅ'], ['kyo', 'きょ'],
+  ['kya', 'きゃ'], ['kyu', 'きゅ'], ['kye', 'きぇ'], ['kyo', 'きょ'],
   ['sya', 'しゃ'], ['syu', 'しゅ'], ['sye', 'しぇ'], ['syo', 'しょ'],
-  ['sha', 'しゃ'], ['shi', 'し'], ['shu', 'しゅ'], ['she', 'しぇ'], ['sho', 'しょ'],
-  ['tya', 'ちゃ'], ['tyu', 'ちゅ'], ['tyu', 'ちぇ'], ['tyo', 'ちょ'],
-  ['cha', 'ちゃ'], ['chi', 'ち'], ['chu', 'ちゅ'], ['che', 'ちぇ'], ['cho', 'ちょ'],
+  ['sha', 'しゃ'], ['shi', 'し'],   ['shu', 'しゅ'], ['she', 'しぇ'], ['sho', 'しょ'],
+  ['tya', 'ちゃ'], ['tyu', 'ちゅ'], ['tye', 'ちぇ'], ['tyo', 'ちょ'],
+  ['cha', 'ちゃ'], ['chi', 'ち'],   ['chu', 'ちゅ'], ['che', 'ちぇ'], ['cho', 'ちょ'],
   ['tha', 'てゃ'], ['thi', 'てぃ'], ['thu', 'てゅ'], ['the', 'てぇ'], ['tho', 'てょ'],
   ['nya', 'にゃ'], ['nyu', 'にゅ'], ['nyo', 'にょ'],
   ['hya', 'ひゃ'], ['hyu', 'ひゅ'], ['hyo', 'ひょ'],
@@ -390,7 +390,7 @@ def UnmapAll()
   endif
   b:vim9skk_keymapped = 0
   for m in maplist()->filter((_, m) => m.script) + vim9skkmap->keys()
-    silent! execute $'unmap! <buffer> <script> {m.lhs}'
+    silent! execute $'unmap! <buffer> <script> {m.lhs->EscapeForMap()}'
   endfor
   if !!get(b:, 'vim9skk_saved_keymap', {})
     for m in b:vim9skk_saved_keymap
