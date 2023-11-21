@@ -190,6 +190,7 @@ def Init()
     okuri_table[v->strcharpart(0, 1)] = k[0]
     roman_keys += [k[0], k[0]->toupper()]
   endfor
+  okuri_table['っ'] = 'r'
   roman_keys->sort()->uniq()
   SetMode(mode_hira)
   initialized = true
