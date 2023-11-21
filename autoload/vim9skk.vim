@@ -107,12 +107,12 @@ const hankaku_chars = ('ｧｱｨｲｩｳｪｴｫｵｶｶﾞｷｷﾞｸｸ�
 const alphabet_chars = ('０１２３４５６７８９' ..
   'ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ' ..
   'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ' ..
-  '！＂＃＄％＆＇（）－＾＼＠［；：］，．／＼＝～｜｀｛＋＊｝＜＞？＿')->split('.\zs')
+  '　！＂＃＄％＆＇（）－＾＼＠［；：］，．／＼＝～｜｀｛＋＊｝＜＞？＿')->split('.\zs')
 
 const abbr_chars = ('0123456789' ..
   'abcdefghijklmnopqrstuvwxyz' ..
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ..
-  '!"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
+  ' !"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
 
 # tr()を使いたいけど、半角カナ濁点半濁点に対応しないといけないので自作
 def ConvChars(str: string, from_chars: list<string>, to_chars: list<string>): string
@@ -378,8 +378,10 @@ def MapToBuf()
   for [_, m] in vim9skkmap->items()
     Map($'<buffer> {m}')
   endfor
-  Map('<buffer> <script> <Space> <ScriptCmd>OnSpace()->feedkeys("nit")<CR>')
-  Map('<buffer> <script> <CR> <ScriptCmd>OnCR()->feedkeys("nit")<CR>')
+  if mode !=# mode_alphabet
+    Map('<buffer> <script> <Space> <ScriptCmd>OnSpace()->feedkeys("nit")<CR>')
+    Map('<buffer> <script> <CR> <ScriptCmd>OnCR()->feedkeys("nit")<CR>')
+  endif
 enddef
 
 def UnmapAll()
@@ -665,13 +667,12 @@ def ShowRecent(_target: string): string
       kouho += j->IconvFrom(enc)->Split(' ')[1]->split('/')
     endif
   endfor
-  if len(kouho) ==# 1
-    return ''
+  if 1 < len(kouho)
+    kouho = kouho->Uniq()
+    kouho_index = 0
+    okuri = ''
+    PopupKouho()
   endif
-  kouho = kouho->Uniq()
-  kouho_index = 0
-  okuri = ''
-  PopupKouho()
   return ''
 enddef
 #}}}
@@ -724,11 +725,7 @@ enddef
 # 辞書操作 {{{
 def ToFullPathAndEncode(path: string): list<string>
   const m = path->matchlist('\(.\+\):\([a-zA-Z0-9-]\+\)$')
-  if !m
-    return [expand(path), '']
-  else
-    return [expand(m[1]), m[2]]
-  endif
+  return !m ? [expand(path), ''] : [expand(m[1]), m[2]]
 enddef
 
 def IconvTo(str: string, enc: string): string
