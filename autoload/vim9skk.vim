@@ -725,16 +725,14 @@ def ToFullPathAndEncode(path: string): list<string>
 enddef
 
 def IconvTo(str: string, enc: string): string
-  const e = enc ?? &enc
-  if !str || enc ==# &enc
+  if !str || !enc || enc ==# &enc
     return str
   endif
   return str->iconv(&enc, enc)
 enddef
 
 def IconvFrom(str: string, enc: string): string
-  const e = enc ?? &enc
-  if !str || enc ==# &enc
+  if !str || !enc || enc ==# &enc
     return str
   endif
   return str->iconv(enc, &enc)
@@ -761,13 +759,14 @@ def ReadJisyo(path: string): list<any>
 enddef
 
 def WriteJisyo(lines: list<string>, path: string, flags: string = '')
-  const [p, enc] = ToFullPathAndEncode(path)
+  const [p, _] = ToFullPathAndEncode(path)
   writefile(lines, p, flags)
 enddef
 
 export def RegisterToUserJisyo(key: string): list<string>
   const save_mode = mode
   const save_skkmode = skkmode
+  const save_enabled_pos = enabled_pos
   const save_start_pos = start_pos
   const save_okuri = okuri
   var result = []
@@ -789,6 +788,7 @@ export def RegisterToUserJisyo(key: string): list<string>
   finally
     mode = save_mode
     skkmode = save_skkmode
+    enabled_pos = save_enabled_pos
     start_pos = save_start_pos
     okuri = save_okuri
   endtry
