@@ -648,9 +648,8 @@ def AddLeftForParen(p: string): string
 enddef
 
 def Complete(): string
-  if !!henkan_key && kouho_index < len(kouho)
-    RegisterToRecentJisyo(henkan_key, kouho[kouho_index])
-  endif
+  RegisterToRecentJisyo(henkan_key, kouho->get(kouho_index, ''))
+  kouho = []
   return GetTarget()
     ->RemoveMarker()
     ->AddLeftForParen()
@@ -811,6 +810,9 @@ export def RegisterToUserJisyo(key: string): list<string>
 enddef
 
 def RegisterToRecentJisyo(before: string, after: string)
+  if !before || !after
+    return
+  endif
   # 新規に追加する行
   var afters = [after] + GetKouhoFromJisyo(g:vim9skk.jisyo_recent, before)
   const newline = $'{before} /{afters->Uniq()->join("/")}/'
