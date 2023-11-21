@@ -14,9 +14,7 @@ const skkmode_select = 2
 var initialized = false
 var mode = mode_hira
 var skkmode = skkmode_direct
-var enabled_pos = 0
 var start_pos = 0
-var pos_delta = 0 # 確定前後のカーソル位置の差
 var henkan_key = ''
 var okuri = ''
 var kouho = []
@@ -27,60 +25,58 @@ var popup_mode_id = 0
 var popup_kouho_id = 0
 var vim9skkmap = {}
 
-const roman_table = [
+const roman_table = {
   # 4文字
-  ['ltsu', 'っ'], ['xtsu', 'っ'],
+  ltsu: 'っ', xtsu: 'っ',
   # 3文字
-  ['gya', 'ぎゃ'], ['gyu', 'ぎゅ'], ['gyo', 'ぎょ'],
-  ['zya', 'じゃ'], ['zyu', 'じゅ'], ['zyo', 'じょ'],
-  ['dya', 'ぢゃ'], ['dyu', 'ぢゅ'], ['dye', 'ぢぇ'], ['dyo', 'ぢょ'],
-  ['dha', 'ぢゃ'], ['dhu', 'ぢゅ'], ['dhe', 'ぢぇ'], ['dho', 'ぢょ'],
-  ['bya', 'びゃ'], ['byu', 'びゅ'], ['byo', 'びょ'],
-  ['pya', 'ぴゃ'], ['pyu', 'ぴゅ'], ['pyo', 'ぴょ'],
-  ['kya', 'きゃ'], ['kyu', 'きゅ'], ['kye', 'きぇ'], ['kyo', 'きょ'],
-  ['sya', 'しゃ'], ['syu', 'しゅ'], ['sye', 'しぇ'], ['syo', 'しょ'],
-  ['sha', 'しゃ'], ['shi', 'し'],   ['shu', 'しゅ'], ['she', 'しぇ'], ['sho', 'しょ'],
-  ['tya', 'ちゃ'], ['tyu', 'ちゅ'], ['tye', 'ちぇ'], ['tyo', 'ちょ'],
-  ['cha', 'ちゃ'], ['chi', 'ち'],   ['chu', 'ちゅ'], ['che', 'ちぇ'], ['cho', 'ちょ'],
-  ['tha', 'てゃ'], ['thi', 'てぃ'], ['thu', 'てゅ'], ['the', 'てぇ'], ['tho', 'てょ'],
-  ['nya', 'にゃ'], ['nyu', 'にゅ'], ['nyo', 'にょ'],
-  ['hya', 'ひゃ'], ['hyu', 'ひゅ'], ['hyo', 'ひょ'],
-  ['mya', 'みゃ'], ['myu', 'みゅ'], ['myo', 'みょ'],
-  ['rya', 'りゃ'], ['ryu', 'りゅ'], ['ryo', 'りょ'],
-  ['lya', 'ゃ'], ['lyu', 'ゅ'], ['lyo', 'ょ'], ['ltu', 'っ'], ['lwa', 'ゎ'],
-  ['xya', 'ゃ'], ['xyu', 'ゅ'], ['xyo', 'ょ'], ['xtu', 'っ'], ['xwa', 'ゎ'],
-  ['tsu', 'つ'],
+  gya: 'ぎゃ', gyu: 'ぎゅ', gyo: 'ぎょ',
+  zya: 'じゃ', zyu: 'じゅ', zyo: 'じょ',
+  dya: 'ぢゃ', dyu: 'ぢゅ', dye: 'ぢぇ', dyo: 'ぢょ',
+  dha: 'ぢゃ', dhu: 'ぢゅ', dhe: 'ぢぇ', dho: 'ぢょ',
+  bya: 'びゃ', byu: 'びゅ', byo: 'びょ',
+  pya: 'ぴゃ', pyu: 'ぴゅ', pyo: 'ぴょ',
+  kya: 'きゃ', kyu: 'きゅ', kye: 'きぇ', kyo: 'きょ',
+  sya: 'しゃ', syu: 'しゅ', sye: 'しぇ', syo: 'しょ',
+  sha: 'しゃ', shi: 'し',   shu: 'しゅ', she: 'しぇ', sho: 'しょ',
+  tya: 'ちゃ', tyu: 'ちゅ', tye: 'ちぇ', tyo: 'ちょ',
+  cha: 'ちゃ', chi: 'ち',   chu: 'ちゅ', che: 'ちぇ', cho: 'ちょ',
+  tha: 'てゃ', thi: 'てぃ', thu: 'てゅ', the: 'てぇ', tho: 'てょ',
+  nya: 'にゃ', nyu: 'にゅ', nyo: 'にょ',
+  hya: 'ひゃ', hyu: 'ひゅ', hyo: 'ひょ',
+  mya: 'みゃ', myu: 'みゅ', myo: 'みょ',
+  rya: 'りゃ', ryu: 'りゅ', ryo: 'りょ',
+  lya: 'ゃ', lyu: 'ゅ', lyo: 'ょ', ltu: 'っ', lwa: 'ゎ',
+  xya: 'ゃ', xyu: 'ゅ', xyo: 'ょ', xtu: 'っ', xwa: 'ゎ',
+  tsu: 'つ',
   # 2文字
-  ['cc', 'っc'],
-  ['ja', 'じゃ'], ['ji', 'じ'], ['ju', 'じゅ'], ['je', 'じぇ'], ['jo', 'じょ'], ['jj', 'っj'],
-  ['fa', 'ふぁ'], ['fi', 'ふぃ'], ['fu', 'ふ'], ['fe', 'ふぇ'], ['fo', 'ふぉ'], ['ff', 'っf'],
-  ['la', 'ぁ'], ['li', 'ぃ'], ['lu', 'ぅ'], ['le', 'ぇ'], ['lo', 'ぉ'],
-  ['xa', 'ぁ'], ['xi', 'ぃ'], ['xu', 'ぅ'], ['xe', 'ぇ'], ['xo', 'ぉ'],
-  ['ga', 'が'], ['gi', 'ぎ'], ['gu', 'ぐ'], ['ge', 'げ'], ['go', 'ご'], ['gg', 'っg'],
-  ['za', 'ざ'], ['zi', 'じ'], ['zu', 'ず'], ['ze', 'ぜ'], ['zo', 'ぞ'], ['zz', 'っz'],
-  ['da', 'だ'], ['di', 'ぢ'], ['du', 'づ'], ['de', 'で'], ['do', 'ど'], ['dd', 'っd'],
-  ['ba', 'ば'], ['bi', 'び'], ['bu', 'ぶ'], ['be', 'べ'], ['bo', 'ぼ'], ['bb', 'っb'],
-  ['pa', 'ぱ'], ['pi', 'ぴ'], ['pu', 'ぷ'], ['pe', 'ぺ'], ['po', 'ぽ'], ['pp', 'っp'],
-  ['ka', 'か'], ['ki', 'き'], ['ku', 'く'], ['ke', 'け'], ['ko', 'こ'], ['kk', 'っk'],
-  ['sa', 'さ'], ['si', 'し'], ['su', 'す'], ['se', 'せ'], ['so', 'そ'], ['ss', 'っs'],
-  ['ta', 'た'], ['ti', 'ち'], ['tu', 'つ'], ['te', 'て'], ['to', 'と'], ['tt', 'っt'],
-  ['na', 'な'], ['ni', 'に'], ['nu', 'ぬ'], ['ne', 'ね'], ['no', 'の'],
-  ['ha', 'は'], ['hi', 'ひ'], ['hu', 'ふ'], ['he', 'へ'], ['ho', 'ほ'], ['hh', 'っh'],
-  ['ma', 'ま'], ['mi', 'み'], ['mu', 'む'], ['me', 'め'], ['mo', 'も'], ['mm', 'っm'],
-  ['ya', 'や'], ['yi', 'ゐ'], ['yu', 'ゆ'], ['ye', 'ゑ'], ['yo', 'よ'], ['yy', 'っy'],
-  ['ra', 'ら'], ['ri', 'り'], ['ru', 'る'], ['re', 'れ'], ['ro', 'ろ'], ['rr', 'っr'],
-  ['wa', 'わ'], ['wo', 'を'], ['nn', 'ん'],
-  ['va', 'ゔぁ'], ['vi', 'ゔぃ'], ['vu', 'ゔ'], ['ve', 'ゔぇ'], ['vo', 'ゔぉ'],
-  ['zl', '→'], ['zh', '←'], ['zj', '↓'], ['zk', '↑'],
-  ['z,', '・'], ['z.', '…'], ['z[', '「'], ['z]', '」'],
+  cc: 'っc',
+  ja: 'じゃ', ji: 'じ', ju: 'じゅ', je: 'じぇ', jo: 'じょ', jj: 'っj',
+  fa: 'ふぁ', fi: 'ふぃ', fu: 'ふ', fe: 'ふぇ', fo: 'ふぉ', ff: 'っf',
+  la: 'ぁ', li: 'ぃ', lu: 'ぅ', le: 'ぇ', lo: 'ぉ',
+  xa: 'ぁ', xi: 'ぃ', xu: 'ぅ', xe: 'ぇ', xo: 'ぉ',
+  ga: 'が', gi: 'ぎ', gu: 'ぐ', ge: 'げ', go: 'ご', gg: 'っg',
+  za: 'ざ', zi: 'じ', zu: 'ず', ze: 'ぜ', zo: 'ぞ', zz: 'っz',
+  da: 'だ', di: 'ぢ', du: 'づ', de: 'で', do: 'ど', dd: 'っd',
+  ba: 'ば', bi: 'び', bu: 'ぶ', be: 'べ', bo: 'ぼ', bb: 'っb',
+  pa: 'ぱ', pi: 'ぴ', pu: 'ぷ', pe: 'ぺ', po: 'ぽ', pp: 'っp',
+  ka: 'か', ki: 'き', ku: 'く', ke: 'け', ko: 'こ', kk: 'っk',
+  sa: 'さ', si: 'し', su: 'す', se: 'せ', so: 'そ', ss: 'っs',
+  ta: 'た', ti: 'ち', tu: 'つ', te: 'て', to: 'と', tt: 'っt',
+  na: 'な', ni: 'に', nu: 'ぬ', ne: 'ね', no: 'の',
+  ha: 'は', hi: 'ひ', hu: 'ふ', he: 'へ', ho: 'ほ', hh: 'っh',
+  ma: 'ま', mi: 'み', mu: 'む', me: 'め', mo: 'も', mm: 'っm',
+  ya: 'や', yi: 'ゐ', yu: 'ゆ', ye: 'ゑ', yo: 'よ', yy: 'っy',
+  ra: 'ら', ri: 'り', ru: 'る', re: 'れ', ro: 'ろ', rr: 'っr',
+  wa: 'わ', wo: 'を', nn: 'ん',
+  va: 'ゔぁ', vi: 'ゔぃ', vu: 'ゔ', ve: 'ゔぇ', vo: 'ゔぉ',
   # 1文字
-  ['a', 'あ'], ['i', 'い'], ['u', 'う'], ['e', 'え'], ['o', 'お'],
-  ['-', 'ー'], ['.', '。'], [',', '、'], ['!', '！'], ['?', '？'], ['/', '・'], ['~', '～'],
-]
-
-# roman_tableのキーの一覧
-# Init()で作る
-var roman_keys = []
+  a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お',
+  # 記号
+  'z,': '・', 'z.': '…', 'z[': '「', 'z]': '」',
+  zl: '→', zh: '←', zj: '↓', zk: '↑',
+  '-': 'ー', '.': '。', ',': '、', '!': '！', '?': '？', '/': '・', '~': '～',
+}
+const roman_table_items = roman_table->items()
 
 # {か:'k'}みたいなdict
 # 変換時に「けんさく*する」→「けんさくs」というふうに辞書を検索する時に使う
@@ -113,6 +109,9 @@ const abbr_chars = ('0123456789' ..
   'abcdefghijklmnopqrstuvwxyz' ..
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ..
   ' !"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
+
+# Init()で作る
+var alphabet_table = {}
 
 # tr()を使いたいけど、半角カナ濁点半濁点に対応しないといけないので自作
 def ConvChars(str: string, from_chars: list<string>, to_chars: list<string>): string
@@ -186,12 +185,13 @@ def Init()
     autocmd CmdlineLeave * CloseKouho()
     autocmd VimLeave * SaveRecentlies()
   augroup END
-  for [k, v] in roman_table
+  for [k, v] in roman_table_items
     okuri_table[v->strcharpart(0, 1)] = k[0]
-    roman_keys += [k[0], k[0]->toupper()]
+  endfor
+  for i in alphabet_chars->len()->range()
+    alphabet_table[alphabet_chars[i]] = abbr_chars[i]
   endfor
   okuri_table['っ'] = 'r'
-  roman_keys->sort()->uniq()
   SetMode(mode_hira)
   initialized = true
 enddef
@@ -201,12 +201,6 @@ def ToDirectMode(s: string = ''): string
   start_pos = GetPos()
   CloseKouho()
   return s
-enddef
-
-def SetEnabledPos()
-  if g:vim9skk_enable
-    enabled_pos = GetPos()
-  endif
 enddef
 
 export def Enable()
@@ -219,7 +213,6 @@ export def Enable()
   endif
   MapToBuf()
   ToDirectMode()
-  SetEnabledPos()
   if mode ==# mode_abbr || mode ==# mode_alphabet
     SetMode(mode_hira)
     # ↓SetModeで実行しているのでここでは不要
@@ -260,6 +253,7 @@ enddef
 
 def SetMode(m: number): string
   mode = m
+  MapToBuf()
   if skkmode !=# skkmode_select
     CloseKouho()
   endif
@@ -303,7 +297,6 @@ enddef
 
 def OnInsertEnter()
   ShowMode(false)
-  SetEnabledPos()
 enddef
 
 def OnInsertLeave()
@@ -327,13 +320,12 @@ def OnCmdlineEnter()
   else
     CloseModePopup()
   endif
-  SetEnabledPos()
 enddef
 # }}}
 
 # キー入力 {{{
 def Map(m: string)
-  execute $'noremap! {m}'
+  execute $'map! {m}'
 enddef
 
 export def Vim9skkMap(m: string)
@@ -358,6 +350,40 @@ def EscapeForMap(key: string): string
     ->substitute('\', '<Bslash>', 'g')
 enddef
 
+var mode_settings = {}
+def GetModeSettings(m: number): any
+  if mode_settings->has_key(m)
+    return mode_settings[m]
+  endif
+  var s = { use_roman: false, items: [] }
+  var table = {}
+  if m ==# mode_hira
+    s.use_roman = true
+    table = roman_table
+  elseif m ==# mode_kata
+    s.use_roman = true
+    for [k, v] in roman_table_items
+      table[k] = v->ConvChars(hira_chars, kata_chars)
+    endfor
+  elseif m ==# mode_hankaku
+    s.use_roman = true
+    for [k, v] in roman_table_items
+      table[k] = v->ConvChars(hira_chars, hankaku_chars)
+    endfor
+  elseif m ==# mode_alphabet
+    for i in abbr_chars
+      table[i] = i->ConvChars(abbr_chars, alphabet_chars)
+    endfor
+  elseif m ==# mode_abbr
+    for i in abbr_chars
+      table[i] = i
+    endfor
+  endif
+  s.items = table->items()
+  mode_settings[m] = s
+  return s
+enddef
+
 # <buffer>にマッピングしないと他のプラグインに取られちゃう
 def MapToBuf()
   if !g:vim9skk_enable
@@ -369,12 +395,20 @@ def MapToBuf()
   UnmapAll()
   b:vim9skk_saved_keymap = maplist()->filter((_, m) => m.buffer)
   b:vim9skk_keymapped = mode
-  const use_roman = mode ==# mode_hira || mode ==# mode_kata || mode ==# mode_hankaku
-  for key in use_roman ? roman_keys : abbr_chars
+  const s = GetModeSettings(mode)
+  for [key, value] in s.items
     const k = key->EscapeForMap()
-    const v = key->escape('"|\\')
-    Map($'<buffer> <script> {k} <ScriptCmd>I("{v}")->feedkeys("nit")<CR>')
+    const c = key->escape('"|\\')
+    const v = value->escape('"|\\')
+    Map($'<buffer> <script> {k} <ScriptCmd>I("{c}", "{v}")->feedkeys("it")<CR>')
   endfor
+  if s.use_roman
+    for key in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
+      const k = key->EscapeForMap()
+      const c = key->tolower()->escape('"|\\')
+      Map($'<buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{c}")->feedkeys("it")<CR>')
+    endfor
+  endif
   for [_, m] in vim9skkmap->items()
     Map($'<buffer> {m}')
   endfor
@@ -400,7 +434,7 @@ def UnmapAll()
   endif
 enddef
 
-def I(c: string): string
+def I(c: string, after: string): string
   var prefix = ''
   # 候補を選択中の場合
   if skkmode ==# skkmode_select
@@ -408,71 +442,28 @@ def I(c: string): string
       return Select(-1)
     endif
     prefix = Complete()
-  else
-    pos_delta = 0
-  endif
-  # 英数入力
-  if mode ==# mode_abbr
-    return prefix .. c
-  elseif mode ==# mode_alphabet
-    return prefix .. c->ConvChars(abbr_chars, alphabet_chars)
-  endif
-  # ここから先はローマ字入力の処理
-  # 大文字入力で見出しを開始する
-  if c =~# '[A-Z]'
-    prefix ..= SetMidasi()
-    start_pos += pos_delta
-  endif
-  # ローマ字をひらがなに変換する
-  var before = ''
-  var after = ''
-  const key = GetLine()
-    ->substitute($'.\%{enabled_pos}c', ' ', '') # 有効になる前の文字は無視する
-    ->matchstr($'.\?.\?.\%{GetPos()}c')
-    ->AddStr(c)
-    ->tolower()
-  for r in roman_table
-    if key[-len(r[0]) :] ==# r[0]
-      before = r[0]
-      after ..= r[1]
-      break
-    endif
-  endfor
-  if !after && key[-2 : -2] ==# 'n' && c !=# 'y'
-    before = 'n' .. c
-    after ..= 'ん' .. c
-  endif
-  if !after
-    return prefix .. c
-  endif
-  if mode ==# mode_kata
-    after = after->ConvChars(hira_chars, kata_chars)
-  elseif mode ==# mode_hankaku
-    after = after->ConvChars(hira_chars, hankaku_chars)
   endif
   if skkmode ==# skkmode_midasi
     GetTarget()
-      ->substitute($'^{g:vim9skk.marker_midasi}', '', '')
-      ->substitute($'^{g:vim9skk.marker_select}', '', '')
-      ->substitute('.'->repeat(len(before) - 1) .. '$', '', '')
+      ->substitute($'^{g:vim9skk.marker_midasi}\|^{g:vim9skk.marker_select}', '', '')
       ->AddStr(after)
       ->ShowRecent()
   endif
-  return "\<BS>"->repeat(len(before) - 1) .. prefix .. after
+  return prefix .. after
 enddef
 
-def SetMidasi(): string
+def SetMidasi(c: string = ''): string
   if skkmode ==# skkmode_midasi
     if GetTarget() =~# g:vim9skk.marker_midasi
-      return '*'
+      return '*' .. c
     endif
   endif
   if skkmode ==# skkmode_select
-    return ''
+    return c
   endif
   skkmode = skkmode_midasi
   start_pos = GetPos()
-  return g:vim9skk.marker_midasi
+  return g:vim9skk.marker_midasi .. c
 enddef
 
 def OnSpace(): string
@@ -533,7 +524,6 @@ def RemoveMarker(s: string): string
     ->substitute(g:vim9skk.marker_midasi, '', '')
     ->substitute(g:vim9skk.marker_select, '', '')
     ->substitute('*', '', '')
-  pos_delta = len(result) - len(s)
   return result
 enddef
 
@@ -635,7 +625,6 @@ enddef
 
 def AddLeftForParen(p: string): string
   if g:vim9skk.parens->index(p) !=# -1
-    pos_delta -= p->matchstr('.$')->len()
     return p .. "\<Left>"
   else
     return p
@@ -770,7 +759,6 @@ enddef
 export def RegisterToUserJisyo(key: string): list<string>
   const save_mode = mode
   const save_skkmode = skkmode
-  const save_enabled_pos = enabled_pos
   const save_start_pos = start_pos
   const save_okuri = okuri
   var result = []
@@ -792,7 +780,6 @@ export def RegisterToUserJisyo(key: string): list<string>
   finally
     mode = save_mode
     skkmode = save_skkmode
-    enabled_pos = save_enabled_pos
     start_pos = save_start_pos
     okuri = save_okuri
   endtry
