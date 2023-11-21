@@ -79,12 +79,10 @@ const roman_table = {
 const roman_table_items = roman_table->items()
 
 # {か:'k'}みたいなdict
-# 変換時に「けんさく*する」→「けんさくs」というふうに辞書を検索する時に使う
+# 変換時に「けんさく*する」→「けんさくs」という風に辞書を検索する時に使う
 # Init()で作る
 var okuri_table = {}
-# }}}
 
-# ユーティリティー {{{
 const hira_chars = ('ぁあぃいぅうぇえぉおかがきぎくぐけげこご' ..
   'さざしじすずせぜそぞただちぢっつづてでとど' ..
   'なにぬねのはばぱひびぴふぶぷへべぺほぼぽ' ..
@@ -109,7 +107,9 @@ const abbr_chars = ('0123456789' ..
   'abcdefghijklmnopqrstuvwxyz' ..
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ..
   ' !"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
+# }}}
 
+# ユーティリティー {{{
 # tr()を使いたいけど、半角カナ濁点半濁点に対応しないといけないので自作
 def ConvChars(str: string, from_chars: list<string>, to_chars: list<string>): string
   var dest = []
