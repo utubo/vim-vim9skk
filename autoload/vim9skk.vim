@@ -554,11 +554,7 @@ def GetKouhoFromJisyo(path: string, key: string): list<string>
     limit -= 1
     const line = lines[i]
     if line->StartsWith(head)
-      var result = []
-      for k in line->IconvFrom(enc)->Split(' ')[1]->split('/')
-        result->add(k->substitute(';.*$', '', ''))
-      endfor
-      return result
+      return line->IconvFrom(enc)->Split(' ')[1]->split('/')
     endif
     d = d / 2 + d % 2
     if d <= 1
@@ -603,6 +599,10 @@ def Cyclic(a: number, max: number): number
   return (a + max) % max
 enddef
 
+def GetSelectedKouho(): string
+  return kouho->get(kouho_index, '')->substitute(';.*', '', '')
+enddef
+
 def Select(d: number): string
   if skkmode ==# skkmode_midasi && !!kouho
     # 予測変換が表示されている場合、そのまま選択モードに移行する
@@ -611,7 +611,8 @@ def Select(d: number): string
     return StartSelect()
   endif
   kouho_index = Cyclic(kouho_index + d, len(kouho))
-  const after = g:vim9skk.marker_select .. kouho[kouho_index] .. okuri
+  const k = GetSelectedKouho()
+  const after = g:vim9skk.marker_select .. k .. okuri
   HighlightKouho()
   return ReplaceTarget(after)
 enddef
@@ -625,7 +626,8 @@ def AddLeftForParen(p: string): string
 enddef
 
 def Complete(): string
-  RegisterToRecentJisyo(henkan_key, kouho->get(kouho_index, ''))
+  const k = GetSelectedKouho()
+  RegisterToRecentJisyo(henkan_key, k)
   kouho = []
   return GetTarget()
     ->RemoveMarker()
@@ -684,6 +686,7 @@ def PopupKouho()
         pos: 'topright',
     })
   )
+  win_execute(popup_kouho_id, 'syntax match PMenuExtra /;.*/')
   HighlightKouho()
 enddef
 
@@ -771,7 +774,7 @@ export def RegisterToUserJisyo(key: string): list<string>
       result += [value]
     endif
   finally
-    mode = save_mode
+    SetMode(save_mode)
     skkmode = save_skkmode
     start_pos = save_start_pos
     okuri = save_okuri
@@ -789,7 +792,7 @@ def RegisterToRecentJisyo(before: string, after: string)
   # 既存の行を削除してから先頭に追加する
   var [lines, enc] = ReadJisyo(g:vim9skk.jisyo_recent)
   const head = $'{before} '->IconvTo(enc)
-  lines->filter((i, v) => !v->StartsWith(head))
+  lines->filter((_, v) => !v->StartsWith(head))
   jisyo[g:vim9skk.jisyo_recent] = [newline->IconvTo(enc)] + lines[: g:vim9skk.recent]
 enddef
 
