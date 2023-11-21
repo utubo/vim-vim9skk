@@ -26,7 +26,7 @@ var popup_mode_id = 0
 var popup_kouho_id = 0
 var vim9skkmap = {}
 
-const roma_table = [
+const roman_table = [
   # 4文字
   ['ltsu', 'っ'], ['xtsu', 'っ'],
   # 3文字
@@ -76,9 +76,9 @@ const roma_table = [
   ['-', 'ー'], ['.', '。'], [',', '、'], ['!', '！'], ['?', '？'], ['/', '・'], ['~', '～'],
 ]
 
-# roma_tableのキーの一覧
+# roman_tableのキーの一覧
 # Init()で作る
-var roma_keys = []
+var roman_keys = []
 
 # {か:'k'}みたいなdict
 # 変換時に「けんさく*する」→「けんさくs」というふうに辞書を検索する時に使う
@@ -87,27 +87,27 @@ var okuri_table = {}
 # }}}
 
 # ユーティリティー {{{
-const hira_table = ('ぁあぃいぅうぇえぉおかがきぎくぐけげこご' ..
+const hira_chars = ('ぁあぃいぅうぇえぉおかがきぎくぐけげこご' ..
   'さざしじすずせぜそぞただちぢっつづてでとど' ..
   'なにぬねのはばぱひびぴふぶぷへべぺほぼぽ' ..
   'まみむめもゃやゅゆょよらりるれろゎわゐゑをんゔー')->split('.\zs')
 
-const kana_table = ('ァアィイゥウェエォオカガキギクグケゲコゴ' ..
+const kata_chars = ('ァアィイゥウェエォオカガキギクグケゲコゴ' ..
   'サザシジスズセゼソゾタダチヂッツヅテデトド' ..
   'ナニヌネノハバパヒビピフブプヘベペホボポ' ..
   'マミムメモャヤュユョヨラリルレロヮワヰヱヲンヴー')->split('.\zs')
 
-const hankaku_table = ('ｧｱｨｲｩｳｪｴｫｵｶｶﾞｷｷﾞｸｸﾞｹｹﾞｺｺﾞ' ..
+const hankaku_chars = ('ｧｱｨｲｩｳｪｴｫｵｶｶﾞｷｷﾞｸｸﾞｹｹﾞｺｺﾞ' ..
   'ｻｻﾞｼｼﾞｽｽﾞｾｾﾞｿｿﾞﾀﾀﾞﾁﾁﾞｯﾂﾂﾞﾃﾃﾞﾄﾄﾞ' ..
   'ﾅﾆﾇﾈﾉﾊﾊﾞﾊﾟﾋﾋﾞﾋﾟﾌﾌﾞﾌﾟﾍﾍﾞﾍﾟﾎﾎﾞﾎﾟ' ..
   'ﾏﾐﾑﾒﾓｬﾔｭﾕｮﾖﾗﾘﾙﾚﾛﾜﾜｲｴｦﾝｳﾞｰ')->split('.[ﾟﾞ]\?\zs')
 
-const alphabet_table = ('０１２３４５６７８９' ..
+const alphabet_chars = ('０１２３４５６７８９' ..
   'ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ' ..
   'ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ' ..
   '！＂＃＄％＆＇（）－＾＼＠［；：］，．／＼＝～｜｀｛＋＊｝＜＞？＿')->split('.\zs')
 
-const abbr_table = ('0123456789' ..
+const abbr_chars = ('0123456789' ..
   'abcdefghijklmnopqrstuvwxyz' ..
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ..
   '!"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
@@ -197,11 +197,11 @@ def Init()
     autocmd CmdlineLeave * CloseKouho()
     autocmd VimLeave * SaveRecentlies()
   augroup END
-  for [k, v] in roma_table
+  for [k, v] in roman_table
     okuri_table[v->strcharpart(0, 1)] = k[0]
   endfor
   for k in okuri_table->values()
-    roma_keys += [k, k->toupper()]->uniq()
+    roman_keys += [k, k->toupper()]->uniq()
   endfor
   SetMode(mode_hira)
   initialized = true
@@ -362,8 +362,8 @@ def MapToBuf()
   UnmapAll()
   b:vim9skk_saved_keymap = maplist()->filter((_, m) => m.buffer)
   b:vim9skk_keymapped = mode
-  const use_roma = mode ==# mode_hira || mode ==# mode_kata || mode ==# mode_hankaku
-  for key in use_roma ? roma_keys : abbr_table
+  const use_roman = mode ==# mode_hira || mode ==# mode_kata || mode ==# mode_hankaku
+  for key in use_roman ? roman_keys : abbr_chars
     const k = key->EscapeForMap()
     const v = key->escape('"|\\')
     Map($'<buffer> <script> {k} <ScriptCmd>I("{v}")->feedkeys("nit")<CR>')
@@ -406,7 +406,7 @@ def I(c: string): string
   if mode ==# mode_abbr
     return prefix .. c
   elseif mode ==# mode_alphabet
-    return prefix .. c->ConvChars(abbr_table, alphabet_table)
+    return prefix .. c->ConvChars(abbr_chars, alphabet_chars)
   endif
   # ここから先はローマ字入力の処理
   # 大文字入力で見出しを開始する
@@ -418,7 +418,7 @@ def I(c: string): string
   var before = ''
   var after = ''
   const key = (GetLine()->matchstr($'.\?.\?.\%{GetPos()}c') .. c)->tolower()
-  for r in roma_table
+  for r in roman_table
     if key[-len(r[0]) :] ==# r[0]
       before = r[0]
       after ..= r[1]
@@ -433,9 +433,9 @@ def I(c: string): string
     return prefix .. c
   endif
   if mode ==# mode_kata
-    after = after->ConvChars(hira_table, kana_table)
+    after = after->ConvChars(hira_chars, kata_chars)
   elseif mode ==# mode_hankaku
-    after = after->ConvChars(hira_table, hankaku_table)
+    after = after->ConvChars(hira_chars, hankaku_chars)
   endif
   if skkmode ==# skkmode_midasi
     GetTarget()
@@ -489,8 +489,8 @@ def ToggleMode(m: number): string
   if skkmode !=# skkmode_direct
     const before = GetTarget()->RemoveMarker()
     const after = before
-      ->SwapChars(hira_table, kana_table)
-      ->SwapChars(alphabet_table, abbr_table)
+      ->SwapChars(hira_chars, kata_chars)
+      ->SwapChars(alphabet_chars, abbr_chars)
     RegisterToRecentJisyo(before, after)
     return after->ReplaceTarget()->ToDirectMode()
   else
@@ -588,7 +588,7 @@ def GetAllKouho(target: string)
   # `▽ほげ*ふが`を見出しと送り仮名に分割する
   const [midasi, o] = target
     ->substitute(g:vim9skk.marker_midasi, '', '')
-    ->ConvChars(kana_table, hira_table)
+    ->ConvChars(kata_chars, hira_chars)
     ->Split('*')
   okuri = o
   # 候補を検索する
