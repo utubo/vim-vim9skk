@@ -796,7 +796,7 @@ def RegisterToRecentJisyo(before: string, after: string)
   const newline = $'{before} /{afters->Uniq()->join("/")}/'
   # 既存の行を削除してから先頭に追加する
   var [lines, enc] = ReadJisyo(g:vim9skk.jisyo_recent)
-  const head = $'{before }'->IconvTo(enc)
+  const head = $'{before} '->IconvTo(enc)
   lines->filter((i, v) => !v->StartsWith(head))
   jisyo[g:vim9skk.jisyo_recent] = [newline->IconvTo(enc)] + lines[: g:vim9skk.recent]
 enddef
