@@ -200,9 +200,7 @@ def Init()
   augroup END
   for [k, v] in roman_table
     okuri_table[v->strcharpart(0, 1)] = k[0]
-  endfor
-  for k in okuri_table->values()
-    roman_keys += [k, k->toupper()]
+    roman_keys += [k[0], k[0]->toupper()]
   endfor
   roman_keys->sort()->uniq()
   SetMode(mode_hira)
