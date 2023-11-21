@@ -309,7 +309,6 @@ def OnInsertLeave()
     ))
     ToDirectMode()
   endif
-  SetEnabledPos()
 enddef
 
 def OnCmdlineEnter()
@@ -321,6 +320,7 @@ def OnCmdlineEnter()
   else
     CloseModePopup()
   endif
+  SetEnabledPos()
 enddef
 # }}}
 
@@ -689,7 +689,7 @@ def PopupKouho()
         line: (&lines - 1),
         pos: 'botright',
       } : {
-        col: screencol(),
+        col: 'cursor',
         line: 'cursor+1',
         pos: 'topright',
     })
