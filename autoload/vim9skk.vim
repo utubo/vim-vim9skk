@@ -29,22 +29,22 @@ const roman_table = {
   # 4文字
   ltsu: 'っ', xtsu: 'っ',
   # 3文字
-  gya: 'ぎゃ', gyu: 'ぎゅ', gyo: 'ぎょ',
-  zya: 'じゃ', zyu: 'じゅ', zyo: 'じょ',
+  gya: 'ぎゃ', gyu: 'ぎゅ', gye: 'ぎぇ', gyo: 'ぎょ',
+  zya: 'じゃ', zyu: 'じゅ', zye: 'じぇ', zyo: 'じょ',
   dya: 'ぢゃ', dyu: 'ぢゅ', dye: 'ぢぇ', dyo: 'ぢょ',
   dha: 'ぢゃ', dhu: 'ぢゅ', dhe: 'ぢぇ', dho: 'ぢょ',
-  bya: 'びゃ', byu: 'びゅ', byo: 'びょ',
-  pya: 'ぴゃ', pyu: 'ぴゅ', pyo: 'ぴょ',
+  bya: 'びゃ', byu: 'びゅ', bye: 'びぇ', byo: 'びょ',
+  pya: 'ぴゃ', pyu: 'ぴゅ', pye: 'ぴぇ', pyo: 'ぴょ',
   kya: 'きゃ', kyu: 'きゅ', kye: 'きぇ', kyo: 'きょ',
   sya: 'しゃ', syu: 'しゅ', sye: 'しぇ', syo: 'しょ',
   sha: 'しゃ', shi: 'し',   shu: 'しゅ', she: 'しぇ', sho: 'しょ',
   tya: 'ちゃ', tyu: 'ちゅ', tye: 'ちぇ', tyo: 'ちょ',
   cha: 'ちゃ', chi: 'ち',   chu: 'ちゅ', che: 'ちぇ', cho: 'ちょ',
   tha: 'てゃ', thi: 'てぃ', thu: 'てゅ', the: 'てぇ', tho: 'てょ',
-  nya: 'にゃ', nyu: 'にゅ', nyo: 'にょ',
-  hya: 'ひゃ', hyu: 'ひゅ', hyo: 'ひょ',
-  mya: 'みゃ', myu: 'みゅ', myo: 'みょ',
-  rya: 'りゃ', ryu: 'りゅ', ryo: 'りょ',
+  nya: 'にゃ', nyu: 'にゅ', nye: 'にぇ', nyo: 'にょ',
+  hya: 'ひゃ', hyu: 'ひゅ', hye: 'ひぇ', hyo: 'ひょ',
+  mya: 'みゃ', myu: 'みゅ', mye: 'みぇ', myo: 'みょ',
+  rya: 'りゃ', ryu: 'りゅ', rye: 'りぇ', ryo: 'りょ',
   lya: 'ゃ', lyu: 'ゅ', lyo: 'ょ', ltu: 'っ', lwa: 'ゎ',
   xya: 'ゃ', xyu: 'ゅ', xyo: 'ょ', xtu: 'っ', xwa: 'ゎ',
   tsu: 'つ',
@@ -52,6 +52,7 @@ const roman_table = {
   cc: 'っc',
   ja: 'じゃ', ji: 'じ', ju: 'じゅ', je: 'じぇ', jo: 'じょ', jj: 'っj',
   fa: 'ふぁ', fi: 'ふぃ', fu: 'ふ', fe: 'ふぇ', fo: 'ふぉ', ff: 'っf',
+  va: 'ゔぁ', vi: 'ゔぃ', vu: 'ゔ', ve: 'ゔぇ', vo: 'ゔぉ',
   la: 'ぁ', li: 'ぃ', lu: 'ぅ', le: 'ぇ', lo: 'ぉ',
   xa: 'ぁ', xi: 'ぃ', xu: 'ぅ', xe: 'ぇ', xo: 'ぉ',
   ga: 'が', gi: 'ぎ', gu: 'ぐ', ge: 'げ', go: 'ご', gg: 'っg',
@@ -68,7 +69,6 @@ const roman_table = {
   ya: 'や', yi: 'ゐ', yu: 'ゆ', ye: 'ゑ', yo: 'よ', yy: 'っy',
   ra: 'ら', ri: 'り', ru: 'る', re: 'れ', ro: 'ろ', rr: 'っr',
   wa: 'わ', wo: 'を', nn: 'ん',
-  va: 'ゔぁ', vi: 'ゔぃ', vu: 'ゔ', ve: 'ゔぇ', vo: 'ゔぉ',
   # 1文字
   a: 'あ', i: 'い', u: 'う', e: 'え', o: 'お',
   # 記号
@@ -405,7 +405,7 @@ def MapToBuf()
   if s.use_roman
     for key in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
       const k = key->EscapeForMap()
-      const c = key->tolower()->escape('"|\\')
+      const c = key->escape('"|\\')
       Map($'<buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{c}")->feedkeys("it")<CR>')
     endfor
   endif
@@ -436,7 +436,6 @@ enddef
 
 def I(c: string, after: string): string
   var prefix = ''
-  # 候補を選択中の場合
   if skkmode ==# skkmode_select
     if c ==# 'x'
       return Select(-1)
@@ -455,15 +454,16 @@ enddef
 def SetMidasi(c: string = ''): string
   if skkmode ==# skkmode_midasi
     if GetTarget() =~# g:vim9skk.marker_midasi
-      return '*' .. c
+      return '*' .. c->tolower()
     endif
   endif
+  var prefix = ''
   if skkmode ==# skkmode_select
-    return c
+    return Complete() .. c
   endif
   skkmode = skkmode_midasi
   start_pos = GetPos()
-  return g:vim9skk.marker_midasi .. c
+  return prefix .. g:vim9skk.marker_midasi .. c->tolower()
 enddef
 
 def OnSpace(): string
