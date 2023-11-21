@@ -110,9 +110,6 @@ const abbr_chars = ('0123456789' ..
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ..
   ' !"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
 
-# Init()で作る
-var alphabet_table = {}
-
 # tr()を使いたいけど、半角カナ濁点半濁点に対応しないといけないので自作
 def ConvChars(str: string, from_chars: list<string>, to_chars: list<string>): string
   var dest = []
@@ -187,9 +184,6 @@ def Init()
   augroup END
   for [k, v] in roman_table_items
     okuri_table[v->strcharpart(0, 1)] = k[0]
-  endfor
-  for i in alphabet_chars->len()->range()
-    alphabet_table[alphabet_chars[i]] = abbr_chars[i]
   endfor
   okuri_table['っ'] = 'r'
   SetMode(mode_hira)
