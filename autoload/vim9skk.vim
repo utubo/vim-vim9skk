@@ -339,11 +339,11 @@ def SetMode(m: number): string
   return ''
 enddef
 
-def ToDirectMode(s: string = ''): string
+def ToDirectMode(chain: string = ''): string
   skkmode = skkmode_direct
   start_pos = GetPos()
   CloseKouho()
-  return s
+  return chain
 enddef
 
 def ToggleMode(m: number): string
@@ -509,12 +509,12 @@ def I(c: string, after: string): string
   return prefix .. after
 enddef
 
-def SetMidasi(c: string = ''): string
+def SetMidasi(key: string = ''): string
   var prefix = ''
   var pos = 0
   if skkmode ==# skkmode_midasi
     if GetTarget() =~# g:vim9skk.marker_midasi
-      return '*' .. c->tolower()
+      return '*' .. key->tolower()
     endif
   elseif skkmode ==# skkmode_select
     pos = g:vim9skk.marker_select->len()
@@ -522,7 +522,7 @@ def SetMidasi(c: string = ''): string
   endif
   skkmode = skkmode_midasi
   start_pos = max([0, GetPos() - pos])
-  return prefix .. g:vim9skk.marker_midasi .. c->tolower()
+  return prefix .. g:vim9skk.marker_midasi .. key->tolower()
 enddef
 # }}}
 
@@ -645,7 +645,7 @@ def AddLeftForParen(p: string): string
   endif
 enddef
 
-def Complete(c: string = ''): string
+def Complete(chain: string = ''): string
   if !g:vim9skk_enable || skkmode ==# skkmode_direct
     return c .. PopSaveKey()
   endif
@@ -654,7 +654,7 @@ def Complete(c: string = ''): string
   kouho = []
   henkan_key = ''
   ToggleAbbr(false)
-  return c
+  return chain
     .. GetTarget()
     ->RemoveMarker()
     ->AddLeftForParen()
