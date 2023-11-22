@@ -363,6 +363,12 @@ def Vim9skkMapExecute(key: string)
   feedkeys($"\<Plug>(vim9skk-map){k}", 'nit')
 enddef
 
+def PopSaveKey(): string
+  const k = g:vim9skk_savekey
+  g:vim9skk_savekey = ''
+  return k
+enddef
+
 def EscapeForMap(key: string): string
   return key
     ->substitute('<', '<LT>', 'g')
@@ -485,6 +491,13 @@ def SetMidasi(c: string = ''): string
 enddef
 
 def ToggleMode(m: number): string
+  if abbr_chars->index(g:vim9skk_savekey) !=# -1
+    if mode ==# mode_alphabet
+      return PopSaveKey()->SwapChars(abbr_chars, alphabet_chars)
+    elseif mode ==# mode_abbr
+      return PopSaveKey()
+    endif
+  endif
   if skkmode !=# skkmode_direct
     const before = GetTarget()->RemoveMarker()
     const after = before
@@ -528,7 +541,7 @@ enddef
 
 def StartSelect(): string
   if !g:vim9skk_enable || skkmode ==# skkmode_direct
-    return g:vim9skk_savekey
+    return PopSaveKey()
   endif
   if skkmode ==# skkmode_select
     return Select(1)
@@ -610,7 +623,7 @@ enddef
 
 def Select(d: number): string
   if !kouho || !g:vim9skk_enable || skkmode ==# skkmode_direct
-    return g:vim9skk_savekey
+    return PopSaveKey()
   endif
   skkmode = skkmode_select
   kouho_index = Cyclic(kouho_index + d, len(kouho))
@@ -630,7 +643,7 @@ enddef
 
 def Complete(): string
   if !g:vim9skk_enable || skkmode ==# skkmode_direct
-    return g:vim9skk_savekey
+    return PopSaveKey()
   endif
   const k = GetSelectedKouho()
   RegisterToRecentJisyo(henkan_key, k)
