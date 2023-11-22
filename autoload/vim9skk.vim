@@ -150,7 +150,7 @@ enddef
 def Uniq(list: list<any>): list<any>
   var result = []
   for a in list
-    if result->index(a) ==# -1
+    if result->Excludes(a)
       result->add(a)
     endif
   endfor
@@ -164,6 +164,14 @@ def ToItems(list: list<any>, F: func): list<list<any>>
     d[k] = v
   endfor
   return d->items()
+enddef
+
+def Includes(a: list<any>, b: any): bool
+  return a->index(b) !=# -1
+enddef
+
+def Excludes(a: list<any>, b: any): bool
+  return a->index(b) ==# -1
 enddef
 # }}}
 
@@ -394,36 +402,29 @@ def CloseModePopup()
     redraw
   endif
 enddef
-
 # }}}
 
 # キー入力 {{{
 export def Vim9skkMap(args: string)
+  const flags = ['<buffer>', '<nowait>', '<silent>', '<special>', '<script>', '<expr>', '<unique>']
   const a = args->split('\\\@<! \+')
-  for i in a->len()->range()
-    const key = a[i]
-    if key ==# '<script>'
-      echoe 'Vim9skkMapでは<script>は使用できません'
-    endif
-    if ['<buffer>', '<nowait>', '<silent>', '<special>', '<script>', '<expr>', '<unique>']->index(key) ==# -1
-      var flg = !i ? [] : a[0 : i - 1]
-      const rhs = a[i + 1 :]->join(' ')->substitute('\\\(.\)', '\1', 'g')
-      var nowait = ''
-      if flg->index('<nowait>') !=# -1
-        nowait = '<nowait>'
-        flg->filter((_, v) => v !=# '<nowait>')
-      endif
-      const v = key
-        ->escape('"|\\')
-        ->substitute('\n\|<CR>', '\\n', 'g')
-      vim9skkmap[key] = {
-        lhs: key,
-        map: $'noremap! <buffer> {nowait} {key} <ScriptCmd>Vim9skkMapExecute("{v}")<CR>'
-      }
-      execute $'noremap! {flg} <Plug>(vim9skk-map){key} {rhs}'
-      return
-    endif
-  endfor
+  const i = a->indexof((_, v) => flags->Excludes(v))
+  var flg = !i ? [] : a[0 : i - 1]
+  const key = a[i]
+  const rhs = a[i + 1 :]->join(' ')->substitute('\\\(.\)', '\1', 'g')
+  var nowait = ''
+  if flg->Includes('<nowait>')
+    nowait = '<nowait>'
+    flg->filter((_, v) => v !=# '<nowait>')
+  endif
+  const v = key
+    ->escape('"|\\')
+    ->substitute('\n\|<CR>', '\\n', 'g')
+  vim9skkmap[key] = {
+    lhs: key,
+    map: $'noremap! <buffer> {nowait} {key} <ScriptCmd>Vim9skkMapExecute("{v}")<CR>'
+  }
+  execute $'noremap! {flg} <Plug>(vim9skk-map){key} {rhs}'
 enddef
 
 def Vim9skkMapExecute(key: string)
@@ -470,7 +471,7 @@ def MapToBuf()
     endfor
   endif
   for m in vim9skkmap->values()
-    if mode.use_roman || abbr_chars->index(m.lhs) ==# -1
+    if mode.use_roman || abbr_chars->Excludes(m.lhs)
       execute m.map
     endif
   endfor
@@ -638,7 +639,7 @@ def Select(d: number): string
 enddef
 
 def AddLeftForParen(p: string): string
-  if g:vim9skk.parens->index(p) !=# -1
+  if g:vim9skk.parens->Includes(p)
     return p .. "\<Left>"
   else
     return p
@@ -647,7 +648,7 @@ enddef
 
 def Complete(chain: string = ''): string
   if !g:vim9skk_enable || skkmode ==# skkmode_direct
-    return c .. PopSaveKey()
+    return chain .. PopSaveKey()
   endif
   const k = GetSelectedKouho()
   RegisterToRecentJisyo(henkan_key, k)
