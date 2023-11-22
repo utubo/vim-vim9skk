@@ -12,8 +12,7 @@ const skkmode_midasi = 1
 const skkmode_select = 2
 
 var initialized = false
-var mode = mode_hira
-var mode_settings = { use_roman: true, items: [] }
+var mode = { id: mode_hira, use_roman: true, items: [] }
 var skkmode = skkmode_direct
 var start_pos = 0
 var henkan_key = ''
@@ -202,13 +201,6 @@ def Init()
   initialized = true
 enddef
 
-def ToDirectMode(s: string = ''): string
-  skkmode = skkmode_direct
-  start_pos = GetPos()
-  CloseKouho()
-  return s
-enddef
-
 export def Enable()
   if g:vim9skk_enable
     return
@@ -239,7 +231,7 @@ export def Disable(popup_even_off: bool = true)
 enddef
 
 export def ToggleSkk(): string
-  if !mode_settings.use_roman
+  if !mode.use_roman
     SetMode(mode_hira)
   elseif g:vim9skk_enable
     Disable()
@@ -247,43 +239,6 @@ export def ToggleSkk(): string
     Enable()
   endif
   return ''
-enddef
-
-def SetMode(m: number): string
-  mode = m
-  mode_settings = GetModeSettings(mode)
-  MapToBuf()
-  if skkmode !=# skkmode_select
-    CloseKouho()
-  endif
-  ShowMode(true)
-  silent! doautocmd User Vim9skkModeChanged
-  return ''
-enddef
-
-def ShowMode(popup_even_off: bool)
-  if !g:vim9skk_enable
-    g:vim9skk_mode = g:vim9skk.mode_label.off
-  else
-    g:vim9skk_mode = mode_settings.label
-  endif
-  CloseModePopup()
-  if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || g:vim9skk_enable)
-    popup_mode_id = popup_create(g:vim9skk_mode, {
-      col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
-      line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
-      time: g:vim9skk.mode_label_timeout,
-    })
-    redraw
-  endif
-enddef
-
-def CloseModePopup()
-  if !!popup_mode_id
-    popup_close(popup_mode_id)
-    popup_mode_id = 0
-    redraw
-  endif
 enddef
 
 def OnInsertEnter()
@@ -316,11 +271,107 @@ enddef
 
 def OnCmdlineLeave()
   CloseKouho()
-  if mode ==# mode_abbr
+  if mode.id ==# mode_abbr
     SetMode(mode_hira)
   endif
 enddef
 # }}}
+
+# 入力モード制御 {{{
+var mode_settings_cache = {}
+def GetModeSettings(m: number): any
+  if !mode_settings_cache->has_key(m)
+    mode_settings_cache[m] = CreateModeSettings(m)
+  endif
+  return mode_settings_cache[m]
+enddef
+
+def CreateModeSettings(m: number): any
+  if m ==# mode_hira
+    return {
+      id: mode_hira,
+      label: g:vim9skk.mode_label.hira,
+      use_roman: true,
+      items: roman_table_items
+    }
+  elseif m ==# mode_kata
+    return {
+      id: mode_kata,
+      label: g:vim9skk.mode_label.kata,
+      use_roman: true,
+      items: roman_table_items
+        ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, kata_chars)])
+    }
+  elseif m ==# mode_hankaku
+    return {
+      id: mode_hankaku,
+      label: g:vim9skk.mode_label.hankaku,
+      use_roman: true,
+      items: roman_table_items
+        ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, hankaku_chars)])
+    }
+  elseif m ==# mode_alphabet
+    return {
+      id: mode_alphabet,
+      label: g:vim9skk.mode_label.alphabet,
+      use_roman: false,
+      items: abbr_chars
+        ->ToItems((i) => [i, i->ConvChars(abbr_chars, alphabet_chars)])
+    }
+  else
+    return {
+      id: mode_abbr,
+      label: g:vim9skk.mode_label.abbr,
+      use_roman: false,
+      items: abbr_chars->ToItems((i) => [i, $"<C-v>{i}"])
+    }
+  endif
+enddef
+
+def SetMode(m: number): string
+  mode = GetModeSettings(m)
+  MapToBuf()
+  if skkmode !=# skkmode_select
+    CloseKouho()
+  endif
+  ShowMode(true)
+  silent! doautocmd User Vim9skkModeChanged
+  return ''
+enddef
+
+def ToDirectMode(s: string = ''): string
+  skkmode = skkmode_direct
+  start_pos = GetPos()
+  CloseKouho()
+  return s
+enddef
+
+def ShowMode(popup_even_off: bool)
+  if !g:vim9skk_enable
+    g:vim9skk_mode = g:vim9skk.mode_label.off
+  else
+    g:vim9skk_mode = mode.label
+  endif
+  CloseModePopup()
+  if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || g:vim9skk_enable)
+    popup_mode_id = popup_create(g:vim9skk_mode, {
+      col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
+      line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
+      time: g:vim9skk.mode_label_timeout,
+    })
+    redraw
+  endif
+enddef
+
+def CloseModePopup()
+  if !!popup_mode_id
+    popup_close(popup_mode_id)
+    popup_mode_id = 0
+    redraw
+  endif
+enddef
+
+#}}}
 
 # キー入力 {{{
 export def Vim9skkMap(args: string)
@@ -372,79 +423,29 @@ def EscapeForMap(key: string): string
     ->substitute('\', '<Bslash>', 'g')
 enddef
 
-var mode_settings_cache = {}
-def GetModeSettings(m: number): any
-  if !mode_settings_cache->has_key(m)
-    mode_settings_cache[m] = CreateModeSettings(m)
-  endif
-  return mode_settings_cache[m]
-enddef
-
-def CreateModeSettings(m: number): any
-  if m ==# mode_hira
-    return {
-      label: g:vim9skk.mode_label.hira,
-      use_roman: true,
-      items: roman_table_items
-    }
-  elseif m ==# mode_kata
-    return {
-      label: g:vim9skk.mode_label.kata,
-      use_roman: true,
-      items: roman_table_items
-        ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, kata_chars)])
-    }
-  elseif m ==# mode_hankaku
-    return {
-      label: g:vim9skk.mode_label.hankaku,
-      use_roman: true,
-      items: roman_table_items
-        ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, hankaku_chars)])
-    }
-  elseif m ==# mode_alphabet
-    return {
-      label: g:vim9skk.mode_label.alphabet,
-      use_roman: false,
-      items: abbr_chars
-        ->ToItems((i) => [i, i->ConvChars(abbr_chars, alphabet_chars)])
-    }
-  else #if m ==# mode_abbr
-    return {
-      label: g:vim9skk.mode_label.abbr,
-      use_roman: false,
-      items: abbr_chars->ToItems((i) => [i, $"<C-v>{i}"])
-    }
-  endif
-enddef
-
 # <buffer>にマッピングしないと他のプラグインに取られちゃう
 def MapToBuf()
   if !g:vim9skk_enable
     return
   endif
-  if get(b:, 'vim9skk_keymapped', 0) ==# mode
+  if get(b:, 'vim9skk_keymapped', 0) ==# mode.id
     return
   endif
   UnmapAll()
   b:vim9skk_saved_keymap = maplist()->filter((_, m) => m.buffer)
-  b:vim9skk_keymapped = mode
-  for [key, value] in mode_settings.items
+  b:vim9skk_keymapped = mode.id
+  for [key, value] in mode.items
     const k = key->EscapeForMap()
     const c = key->escape('"|\\')
     const v = value->escape('"|\\')
     execute $'map! <buffer> <script> {k} <ScriptCmd>I("{c}", "{v}")->feedkeys("it")<CR>'
   endfor
-  if mode_settings.use_roman
-    for key in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
-      const k = key->EscapeForMap()
-      const c = key->escape('"|\\')
-      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{c}")->feedkeys("it")<CR>'
+  if mode.use_roman
+    for k in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
+      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{k}")->feedkeys("it")<CR>'
     endfor
   endif
-  for m in vim9skkmap->values()
-    if !mode_settings.use_roman && abbr_chars->index(m.lhs) !=# -1
-      continue
-    endif
+  for m in vim9skkmap->values()->filter((_, m) => abbr_chars->index(m.lhs) ==# -1)
     execute m.map
   endfor
 enddef
@@ -507,13 +508,13 @@ def ToggleMode(m: number): string
     RegisterToRecentJisyo(before, after)
     return after->ReplaceTarget()->ToDirectMode()
   else
-    SetMode(mode !=# m ? m : mode_hira)
+    SetMode(mode.id !=# m ? m : mode_hira)
     return ''
   endif
 enddef
 
 def ToggleAbbr(enable: bool = true): string
-  if mode ==# mode_abbr || !enable
+  if mode.id ==# mode_abbr || !enable
     SetMode(mode_hira)
     return ''
   else
@@ -662,7 +663,7 @@ enddef
 # 予測変換ポップアップ {{{
 def ShowRecent(_target: string): string
   var target = _target
-  if mode_settings.use_roman
+  if mode.use_roman
     target = target->substitute('n$', 'ん', '')
   endif
   kouho = [target]
@@ -776,7 +777,7 @@ enddef
 
 export def RegisterToUserJisyo(key: string): list<string>
   const save = {
-    mode: mode,
+    mode_id: mode.id,
     skkmode: skkmode,
     start_pos: start_pos,
     okuri: okuri,
@@ -798,7 +799,7 @@ export def RegisterToUserJisyo(key: string): list<string>
       result += [value]
     endif
   finally
-    SetMode(save.mode)
+    SetMode(save.mode_id)
     skkmode = save.skkmode
     start_pos = save.start_pos
     okuri = save.okuri
