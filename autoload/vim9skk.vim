@@ -346,6 +346,30 @@ def ToDirectMode(s: string = ''): string
   return s
 enddef
 
+def ToggleMode(m: number): string
+  if skkmode !=# skkmode_direct
+    const before = GetTarget()->RemoveMarker()
+    const after = before
+      ->SwapChars(hira_chars, kata_chars)
+      ->SwapChars(alphabet_chars, abbr_chars)
+    RegisterToRecentJisyo(before, after)
+    return after->ReplaceTarget()->ToDirectMode()
+  else
+    SetMode(mode.id !=# m ? m : mode_hira)
+    return ''
+  endif
+enddef
+
+def ToggleAbbr(enable: bool = true): string
+  if mode.id ==# mode_abbr || !enable
+    SetMode(mode_hira)
+    return ''
+  else
+    SetMode(mode_abbr)
+    return SetMidasi()
+  endif
+enddef
+
 def ShowMode(popup_even_off: bool)
   if !g:vim9skk_enable
     g:vim9skk_mode = g:vim9skk.mode_label.off
@@ -371,7 +395,7 @@ def CloseModePopup()
   endif
 enddef
 
-#}}}
+# }}}
 
 # キー入力 {{{
 export def Vim9skkMap(args: string)
@@ -498,31 +522,7 @@ def SetMidasi(c: string = ''): string
   start_pos = max([0, GetPos() - pos])
   return prefix .. g:vim9skk.marker_midasi .. c->tolower()
 enddef
-
-def ToggleMode(m: number): string
-  if skkmode !=# skkmode_direct
-    const before = GetTarget()->RemoveMarker()
-    const after = before
-      ->SwapChars(hira_chars, kata_chars)
-      ->SwapChars(alphabet_chars, abbr_chars)
-    RegisterToRecentJisyo(before, after)
-    return after->ReplaceTarget()->ToDirectMode()
-  else
-    SetMode(mode.id !=# m ? m : mode_hira)
-    return ''
-  endif
-enddef
-
-def ToggleAbbr(enable: bool = true): string
-  if mode.id ==# mode_abbr || !enable
-    SetMode(mode_hira)
-    return ''
-  else
-    SetMode(mode_abbr)
-    return SetMidasi()
-  endif
-enddef
-#}}}
+# }}}
 
 # 変換 {{{
 def GetTarget(): string
@@ -658,7 +658,7 @@ def Complete(): string
     ->ReplaceTarget()
     ->ToDirectMode()
 enddef
-#}}}
+# }}}
 
 # 予測変換ポップアップ {{{
 def ShowRecent(_target: string): string
@@ -682,7 +682,7 @@ def ShowRecent(_target: string): string
   endif
   return ''
 enddef
-#}}}
+# }}}
 
 # 候補ポップアップ {{{
 def PopupKouho()
@@ -728,7 +728,7 @@ def CloseKouho()
     redraw
   endif
 enddef
-#}}}
+# }}}
 
 # 辞書操作 {{{
 def ToFullPathAndEncode(path: string): list<string>
@@ -832,7 +832,7 @@ export def RefreshJisyo()
   jisyo = {}
   echo '辞書をリフレッシュしました'
 enddef
-#}}}
+# }}}
 
 # terminal {{{
 export def TerminalInput()
@@ -842,5 +842,5 @@ export def TerminalInput()
     feedkeys(value, 'int')
   endif
 enddef
-#}}}
+# }}}
 
