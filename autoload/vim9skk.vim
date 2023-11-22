@@ -13,6 +13,7 @@ const skkmode_select = 2
 
 var initialized = false
 var mode = mode_hira
+var mode_settings = { use_roman: true, items: [] }
 var skkmode = skkmode_direct
 var start_pos = 0
 var henkan_key = ''
@@ -156,6 +157,15 @@ def Uniq(list: list<any>): list<any>
   endfor
   return result
 enddef
+
+def ToItems(list: list<any>, F: func): list<list<any>>
+  var d = {}
+  for i in list
+    const [k, v] = F(i)
+    d[k] = v
+  endfor
+  return d->items()
+enddef
 # }}}
 
 # 基本 {{{
@@ -209,14 +219,8 @@ export def Enable()
   endif
   MapToBuf()
   ToDirectMode()
-  if mode ==# mode_abbr || mode ==# mode_alphabet
-    SetMode(mode_hira)
-    # ↓SetModeで実行しているのでここでは不要
-    #silent! doautocmd User Vim9skkModeChanged
-  else
-    ShowMode(true)
-    silent! doautocmd User Vim9skkModeChanged
-  endif
+  ShowMode(true)
+  silent! doautocmd User Vim9skkModeChanged
   silent! doautocmd User Vim9skkEnabled
 enddef
 
@@ -235,12 +239,10 @@ export def Disable(popup_even_off: bool = true)
 enddef
 
 export def ToggleSkk(): string
-  if g:vim9skk_enable
-    if mode ==# mode_abbr || mode ==# mode_alphabet
-      SetMode(mode_hira)
-    else
-      Disable()
-    endif
+  if !mode_settings.use_roman
+    SetMode(mode_hira)
+  elseif g:vim9skk_enable
+    Disable()
   else
     Enable()
   endif
@@ -249,6 +251,7 @@ enddef
 
 def SetMode(m: number): string
   mode = m
+  mode_settings = GetModeSettings(mode)
   MapToBuf()
   if skkmode !=# skkmode_select
     CloseKouho()
@@ -261,16 +264,8 @@ enddef
 def ShowMode(popup_even_off: bool)
   if !g:vim9skk_enable
     g:vim9skk_mode = g:vim9skk.mode_label.off
-  elseif mode ==# mode_kata
-    g:vim9skk_mode = g:vim9skk.mode_label.kata
-  elseif mode ==# mode_hankaku
-    g:vim9skk_mode = g:vim9skk.mode_label.hankaku
-  elseif mode ==# mode_alphabet
-    g:vim9skk_mode = g:vim9skk.mode_label.alphabet
-  elseif mode ==# mode_abbr
-    g:vim9skk_mode = g:vim9skk.mode_label.abbr
   else
-    g:vim9skk_mode = g:vim9skk.mode_label.hira
+    g:vim9skk_mode = mode_settings.label
   endif
   CloseModePopup()
   if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || g:vim9skk_enable)
@@ -377,38 +372,49 @@ def EscapeForMap(key: string): string
     ->substitute('\', '<Bslash>', 'g')
 enddef
 
-var mode_settings = {}
+var mode_settings_cache = {}
 def GetModeSettings(m: number): any
-  if mode_settings->has_key(m)
-    return mode_settings[m]
+  if !mode_settings_cache->has_key(m)
+    mode_settings_cache[m] = CreateModeSettings(m)
   endif
-  var s = { use_roman: false, items: [] }
-  var table = {}
+  return mode_settings_cache[m]
+enddef
+
+def CreateModeSettings(m: number): any
   if m ==# mode_hira
-    s.use_roman = true
-    table = roman_table
+    return {
+      label: g:vim9skk.mode_label.hira,
+      use_roman: true,
+      items: roman_table_items
+    }
   elseif m ==# mode_kata
-    s.use_roman = true
-    for [k, v] in roman_table_items
-      table[k] = v->ConvChars(hira_chars, kata_chars)
-    endfor
+    return {
+      label: g:vim9skk.mode_label.kata,
+      use_roman: true,
+      items: roman_table_items
+        ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, kata_chars)])
+    }
   elseif m ==# mode_hankaku
-    s.use_roman = true
-    for [k, v] in roman_table_items
-      table[k] = v->ConvChars(hira_chars, hankaku_chars)
-    endfor
+    return {
+      label: g:vim9skk.mode_label.hankaku,
+      use_roman: true,
+      items: roman_table_items
+        ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, hankaku_chars)])
+    }
   elseif m ==# mode_alphabet
-    for i in abbr_chars
-      table[i] = i->ConvChars(abbr_chars, alphabet_chars)
-    endfor
-  elseif m ==# mode_abbr
-    for i in abbr_chars
-      table[i] = $"<C-v>{i}"
-    endfor
+    return {
+      label: g:vim9skk.mode_label.alphabet,
+      use_roman: false,
+      items: abbr_chars
+        ->ToItems((i) => [i, i->ConvChars(abbr_chars, alphabet_chars)])
+    }
+  else #if m ==# mode_abbr
+    return {
+      label: g:vim9skk.mode_label.abbr,
+      use_roman: false,
+      items: abbr_chars->ToItems((i) => [i, $"<C-v>{i}"])
+    }
   endif
-  s.items = table->items()
-  mode_settings[m] = s
-  return s
 enddef
 
 # <buffer>にマッピングしないと他のプラグインに取られちゃう
@@ -422,14 +428,13 @@ def MapToBuf()
   UnmapAll()
   b:vim9skk_saved_keymap = maplist()->filter((_, m) => m.buffer)
   b:vim9skk_keymapped = mode
-  const s = GetModeSettings(mode)
-  for [key, value] in s.items
+  for [key, value] in mode_settings.items
     const k = key->EscapeForMap()
     const c = key->escape('"|\\')
     const v = value->escape('"|\\')
     execute $'map! <buffer> <script> {k} <ScriptCmd>I("{c}", "{v}")->feedkeys("it")<CR>'
   endfor
-  if s.use_roman
+  if mode_settings.use_roman
     for key in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
       const k = key->EscapeForMap()
       const c = key->escape('"|\\')
@@ -437,7 +442,7 @@ def MapToBuf()
     endfor
   endif
   for m in vim9skkmap->values()
-    if !s.use_roman && abbr_chars->index(m.lhs) !=# -1
+    if !mode_settings.use_roman && abbr_chars->index(m.lhs) !=# -1
       continue
     endif
     execute m.map
@@ -657,7 +662,7 @@ enddef
 # 予測変換ポップアップ {{{
 def ShowRecent(_target: string): string
   var target = _target
-  if mode ==# mode_hira || mode ==# mode_kata
+  if mode_settings.use_roman
     target = target->substitute('n$', 'ん', '')
   endif
   kouho = [target]
@@ -770,10 +775,12 @@ def WriteJisyo(lines: list<string>, path: string, flags: string = '')
 enddef
 
 export def RegisterToUserJisyo(key: string): list<string>
-  const save_mode = mode
-  const save_skkmode = skkmode
-  const save_start_pos = start_pos
-  const save_okuri = okuri
+  const save = {
+    mode: mode,
+    skkmode: skkmode,
+    start_pos: start_pos,
+    okuri: okuri,
+  }
   var result = []
   try
     skkmode = skkmode_direct
@@ -791,10 +798,10 @@ export def RegisterToUserJisyo(key: string): list<string>
       result += [value]
     endif
   finally
-    SetMode(save_mode)
-    skkmode = save_skkmode
-    start_pos = save_start_pos
-    okuri = save_okuri
+    SetMode(save.mode)
+    skkmode = save.skkmode
+    start_pos = save.start_pos
+    okuri = save.okuri
   endtry
   return result
 enddef
