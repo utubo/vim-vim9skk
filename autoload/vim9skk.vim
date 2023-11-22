@@ -437,6 +437,9 @@ def MapToBuf()
     endfor
   endif
   for m in vim9skkmap->values()
+    if !s.use_roman && abbr_chars->index(m.lhs) !=# -1
+      continue
+    endif
     execute m.map
   endfor
 enddef
@@ -491,13 +494,6 @@ def SetMidasi(c: string = ''): string
 enddef
 
 def ToggleMode(m: number): string
-  if abbr_chars->index(g:vim9skk_savekey) !=# -1
-    if mode ==# mode_alphabet
-      return PopSaveKey()->SwapChars(abbr_chars, alphabet_chars)
-    elseif mode ==# mode_abbr
-      return PopSaveKey()
-    endif
-  endif
   if skkmode !=# skkmode_direct
     const before = GetTarget()->RemoveMarker()
     const after = before
