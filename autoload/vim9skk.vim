@@ -469,8 +469,10 @@ def MapToBuf()
       execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{k}")->feedkeys("it")<CR>'
     endfor
   endif
-  for m in vim9skkmap->values()->filter((_, m) => abbr_chars->index(m.lhs) ==# -1)
-    execute m.map
+  for m in vim9skkmap->values()
+    if mode.use_roman || abbr_chars->index(m.lhs) ==# -1
+      execute m.map
+    endif
   endfor
 enddef
 
