@@ -172,12 +172,21 @@ KEY-MAPPINGS					*vim9skk-key-mappings*
 <Plug>(vim9skk-hira)				*<Plug>(vim9skk-hira)*
 	ひらがなモードに切り替えます
 
+<Plug>(vim9skk-select)				*<Plug>(vim9skk-select)*
+	選択モード中に切り替えます
+	既に選択モードの場合は、次の候補を選択します
+	見出しモードでない場合は無効です
+	`<Space>`と同様
+
 <Plug>(vim9skk-next)				*<Plug>(vim9skk-next)*
 	次の候補を選択します
-	選択モード中の`<Space>`と同様
 
 <Plug>(vim9skk-prev)				*<Plug>(vim9skk-prev)*
-	前の候補を選択します
+
+<Plug>(vim9skk-complete)			*<Plug>(vim9skk-complete)*
+	変換を確定します
+	選択モードでない場合は無効です
+	`<CR>`と同様
 
 <Plug>(vim9skk-cancel)				*<Plug>(vim9skk-cancel)*
 	一番上の候補を選択します

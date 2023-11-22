@@ -41,12 +41,13 @@ if g:vim9skk.disable_default_mappings
 endif
 noremap! <C-j> <Plug>(vim9skk-toggle)
 tnoremap <C-j> <ScriptCmd>Vim9skkTerminalInput<CR>
-Vim9skkMap q     <Plug>(vim9skk-kana)
-Vim9skkMap <C-q> <Plug>(vim9skk-hankaku)
-Vim9skkMap L     <Plug>(vim9skk-alphabet)
-Vim9skkMap /     <Plug>(vim9skk-abbr)
-Vim9skkMap Q     <Plug>(vim9skk-midasi)
-Vim9skkMap <C-g> <Plug>(vim9skk-cancel)
-Vim9skkMap <expr> <Tab> g:vim9skk_selectable ? '<Plug>(vim9skk-next)' : '<TAB>'
+Vim9skkMap q       <Plug>(vim9skk-kana)
+Vim9skkMap <C-q>   <Plug>(vim9skk-hankaku)
+Vim9skkMap L       <Plug>(vim9skk-alphabet)
+Vim9skkMap /       <Plug>(vim9skk-abbr)
+Vim9skkMap Q       <Plug>(vim9skk-midasi)
+Vim9skkMap <Space> <Plug>(vim9skk-select)
+Vim9skkMap <CR>    <Plug>(vim9skk-complete)
+Vim9skkMap <Tab>   <Plug>(vim9skk-next)
 Vim9skkMap <S-Tab> <Plug>(vim9skk-prev)
-
+Vim9skkMap <C-g>   <Plug>(vim9skk-cancel)
