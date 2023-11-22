@@ -183,7 +183,7 @@ def Init()
   MapPlugKey('vim9skk-prev',     'Select(-1)')
   MapPlugKey('vim9skk-next',     'Select(1)')
   MapPlugKey('vim9skk-complete', 'Complete()')
-  MapPlugKey('vim9skk-cancel',   'Select(-kouho_index)')
+  MapPlugKey('vim9skk-cancel',   'Select(-kouho_index)->Complete()')
   augroup vim9skk
     autocmd!
     autocmd BufEnter * MapToBuf()
@@ -645,16 +645,17 @@ def AddLeftForParen(p: string): string
   endif
 enddef
 
-def Complete(): string
+def Complete(c: string = ''): string
   if !g:vim9skk_enable || skkmode ==# skkmode_direct
-    return PopSaveKey()
+    return c .. PopSaveKey()
   endif
   const k = GetSelectedKouho()
   RegisterToRecentJisyo(henkan_key, k)
   kouho = []
   henkan_key = ''
   ToggleAbbr(false)
-  return GetTarget()
+  return c
+    .. GetTarget()
     ->RemoveMarker()
     ->AddLeftForParen()
     ->ReplaceTarget()

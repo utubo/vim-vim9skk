@@ -189,7 +189,7 @@ KEY-MAPPINGS					*vim9skk-key-mappings*
 	`<CR>`と同様
 
 <Plug>(vim9skk-cancel)				*<Plug>(vim9skk-cancel)*
-	一番上の候補を選択します
+	一番上の候補(無変換)で確定します
 
 						*vim9skk-default-key-mappings*
 default key mappings
