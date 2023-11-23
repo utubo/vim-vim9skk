@@ -617,7 +617,7 @@ def GetAllKouho(target: string)
   okuri = o
   # 候補を検索する
   const okuri_key = okuri_table->get(okuri
-    ->substitute('^っ*\(.\)', '\1', '')
+    ->substitute('^っ*', '', '')
     ->matchstr('^.'), ''
   )
   henkan_key = $'{midasi}{okuri_key}' # `ほげf`
