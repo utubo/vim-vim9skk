@@ -349,7 +349,7 @@ enddef
 def SetSkkMode(s: number)
   if skkmode !=# s
     skkmode = s
-    MapSkkKeys()
+    MapMidasiMode()
   endif
 enddef
 
@@ -423,6 +423,24 @@ def MapToBuf()
   UnmapAll()
   b:vim9skk_saved_keymap = maplist()->filter((_, m) => m.buffer)
   b:vim9skk_keymapped = mode.id
+  MapRoman()
+  b:vim9skk_saved_roman = {}
+  for key in g:vim9skk.keymap->values()->flattennew()
+    b:vim9skk_saved_roman[key] = [
+      maparg(key, 'i', false, true),
+      maparg(key, 'c', false, true),
+    ]
+  endfor
+  MapFunction(g:vim9skk.keymap.kata,     'ToggleMode(mode_kata)')
+  MapFunction(g:vim9skk.keymap.hankaku,  'ToggleMode(mode_hankaku)')
+  MapFunction(g:vim9skk.keymap.alphabet, 'ToggleMode(mode_alphabet)')
+  MapFunction(g:vim9skk.keymap.abbr,     'ToggleAbbr()')
+  MapFunction(g:vim9skk.keymap.midasi,   'SetMidasi()')
+  MapMidasiMode()
+  MapSelectMode(kouho)
+enddef
+
+def MapRoman()
   for [key, value] in mode.items
     const k = key->EscapeForMap()
     const c = key->escape('"|\\')
@@ -434,54 +452,39 @@ def MapToBuf()
       execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{k}")->feedkeys("it")<CR>'
     endfor
   endif
-  b:vim9skk_saved_roman = {}
-  for key in g:vim9skk.keymap->values()->flattennew()
-    b:vim9skk_saved_roman[key] = [
-      maparg(key, 'i', false, true),
-      maparg(key, 'c', false, true),
-    ]
-  endfor
-  MapSkkKeys()
 enddef
 
-def MapSkkKey(keys: any, f: string)
-  for key in [keys ?? []]->flattennew()
-    if mode.use_roman || abbr_chars->Excludes(key)
-      execute $'map! <buffer> <script> {key} <ScriptCmd>{f}->feedkeys("nit")<CR>'
+def MapFunction(keys: any, f: string, enable: bool = true)
+  const flat = [keys ?? []]->flattennew()
+  for key in flat
+    const k = key
+      ->substitute('|', '<Bar>', 'g')
+      ->substitute('\\', '<Bslash>', 'g')
+    if enable
+      if mode.use_roman || abbr_chars->Excludes(key)
+        execute $'map! <buffer> <script> {k} <ScriptCmd>{f}->feedkeys("nit")<CR>'
+      endif
+    else
+      silent! execute $'unmap! <buffer> <script> {k}'
+      get(b:, 'vim9skk_saved_roman', {})->get(key, [])->ForEach((m) => mapset(m))
     endif
   endfor
 enddef
 
-def MapSkkKeys()
-  if !g:vim9skk_enable
-    return
+def MapMidasiMode()
+  if g:vim9skk_enable
+    const enable = skkmode !=# skkmode_direct
+    MapFunction(g:vim9skk.keymap.select,   'StartSelect()', enable)
+    MapFunction(g:vim9skk.keymap.complete, 'Complete()', enable)
+    MapFunction(g:vim9skk.keymap.cancel,   'Select(-kouho_index)->Complete()', enable)
   endif
-  for [key, map] in b:vim9skk_saved_roman->items()
-    silent! execute $'unmap! <buffer> <script> {key}'
-    map->ForEach((m) => mapset(m))
-  endfor
-  MapSkkKey(g:vim9skk.keymap.kata,       'ToggleMode(mode_kata)')
-  MapSkkKey(g:vim9skk.keymap.hankaku,    'ToggleMode(mode_hankaku)')
-  MapSkkKey(g:vim9skk.keymap.alphabet,   'ToggleMode(mode_alphabet)')
-  MapSkkKey(g:vim9skk.keymap.abbr,       'ToggleAbbr()')
-  MapSkkKey(g:vim9skk.keymap.midasi,     'SetMidasi()')
-  if skkmode !=# skkmode_direct
-    MapSkkKey(g:vim9skk.keymap.select,   'StartSelect()')
-    MapSkkKey(g:vim9skk.keymap.complete, 'Complete()')
-    MapSkkKey(g:vim9skk.keymap.cancel,   'Select(-kouho_index)->Complete()')
-  endif
-  MapSelectKouho(kouho)
 enddef
 
-def MapSelectKouho(k: any)
-  if !k
-    for key in [g:vim9skk.keymap.next, g:vim9skk.keymap.prev]->flattennew()
-      silent! execute $'unmap! <buffer> <script> {key}'
-      get(b:, 'vim9skk_saved_roman', {})->get(key, [])->ForEach((m) => mapset(m))
-    endfor
-  else
-    MapSkkKey(g:vim9skk.keymap.next, 'Select(1)')
-    MapSkkKey(g:vim9skk.keymap.prev, 'Select(-1)')
+def MapSelectMode(k: any)
+  if g:vim9skk_enable
+    const enable = !!k
+    MapFunction(g:vim9skk.keymap.next, 'Select(1)', enable)
+    MapFunction(g:vim9skk.keymap.prev, 'Select(-1)', enable)
   endif
 enddef
 
@@ -553,6 +556,9 @@ def ReplaceTarget(after: string): string
 enddef
 
 def StartSelect(): string
+  if skkmode ==# skkmode_select
+    return Select(1)
+  endif
   GetTarget()->GetAllKouho()
   if !kouho
     CloseKouho()
@@ -651,7 +657,7 @@ def Complete(chain: string = ''): string
   kouho = []
   henkan_key = ''
   ToggleAbbr(false)
-  MapSelectKouho([])
+  MapSelectMode([])
   return chain
     .. GetTarget()
     ->RemoveMarker()
@@ -691,7 +697,7 @@ def PopupKouho()
   if !kouho
     return
   endif
-  MapSelectKouho(kouho)
+  MapSelectMode(kouho)
   if g:vim9skk.popup_maxheight <= 0
     return
   endif
@@ -722,7 +728,7 @@ def HighlightKouho()
 enddef
 
 def CloseKouho()
-  MapSelectKouho([])
+  MapSelectMode([])
   if popup_kouho_id !=# 0
     popup_close(popup_kouho_id)
     popup_kouho_id = 0
