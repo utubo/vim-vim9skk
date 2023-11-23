@@ -30,7 +30,7 @@ var default = {
     midasi: 'Q',
     select: '<Space>',
     next: '<Tab>',
-    prev: '<S-Tab>',
+    prev: ['<S-Tab>', 'x'],
     complete: '<CR>',
     cancel: '<C-g>',
   },

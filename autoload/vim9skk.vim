@@ -323,7 +323,8 @@ def CreateModeSettings(m: number): any
       id: mode_abbr,
       label: g:vim9skk.mode_label.abbr,
       use_roman: false,
-      items: abbr_chars->ToItems((i) => [i, $"<C-v>{i}"])
+      # マッピングしないけど…
+      items: abbr_chars->ToItems((i) => [i, i])
     }
   endif
 enddef
@@ -441,6 +442,9 @@ def MapToBuf()
 enddef
 
 def MapRoman()
+  if mode.id ==# mode_abbr
+    return
+  endif
   for [key, value] in mode.items
     const k = key->EscapeForMap()
     const c = key->escape('"|\\')
@@ -455,14 +459,14 @@ def MapRoman()
 enddef
 
 def MapFunction(keys: any, f: string, enable: bool = true)
-  const flat = [keys ?? []]->flattennew()
-  for key in flat
+  for key in [keys ?? []]->flattennew() # keysはlist<string>またはstring
     const k = key
       ->substitute('|', '<Bar>', 'g')
       ->substitute('\\', '<Bslash>', 'g')
     if enable
-      if mode.use_roman || abbr_chars->Excludes(key)
-        execute $'map! <buffer> <script> {k} <ScriptCmd>{f}->feedkeys("nit")<CR>'
+      if skkmode ==# skkmode_select || mode.use_roman || abbr_chars->Excludes(key)
+        const nowait = len(key) ==# 1 ? '<nowait>' : ''
+        execute $'map! <buffer> <script> {nowait} {k} <ScriptCmd>{f}->feedkeys("nit")<CR>'
       endif
     else
       silent! execute $'unmap! <buffer> <script> {k}'
