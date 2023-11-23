@@ -413,8 +413,9 @@ def EscapeForMap(key: string): string
 enddef
 
 def MapFunction(keys: any, f: string, enable: bool = true)
-  for key in [keys ?? []]->flattennew() # keysはlist<string>またはstring
+  for key in type(keys) ==# v:t_string ? [keys] : keys
     if enable
+      # 選択モードのxや全英モードのLに対応するための面倒なif文
       if skkmode ==# skkmode_select || mode.use_roman || abbr_chars->Excludes(key)
         const nowait = len(key) ==# 1 ? '<nowait>' : ''
         execute $'map! <buffer> <script> {nowait} {key} <ScriptCmd>{f}->feedkeys("nit")<CR>'
