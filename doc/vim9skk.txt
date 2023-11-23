@@ -188,10 +188,6 @@ g:vim9skk					*g:vim9skk*
 ------------------------------------------------------------------------------
 COMMANDS					*vim9skk-commands*
 
-:Vim9skkMap					*:Vim9skkMap*
-	vim9skkが有効な場合のみ作用するマッピングを設定します
-	このマッピング内で`<script>`は使えません
-
 :Vim9skkTerminalInput				*:Vim9skkTerminalInput*
 	terminalに入力するための入力プロンプトを表示します
 
