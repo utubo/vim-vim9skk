@@ -156,10 +156,10 @@ def Uniq(list: list<any>): list<any>
   return result
 enddef
 
-def ToItems(list: list<any>, F: func): list<list<any>>
+def ToItems(list: list<any>, CreateKeyValueFunc: func): list<list<any>>
   var d = {}
   for i in list
-    const [k, v] = F(i)
+    const [k, v] = CreateKeyValueFunc(i)
     d[k] = v
   endfor
   return d->items()
@@ -464,9 +464,8 @@ def MapRoman()
   const flg = mode.use_roman ? 'it' : 'nit'
   for [key, value] in mode.items
     const k = key->EscapeForMap()
-    const c = key->escape('"|\\')
     const v = value->escape('"|\\')
-    execute $'{map} <buffer> <script> {k} <ScriptCmd>I("{c}", "{v}")->feedkeys("{flg}")<CR>'
+    execute $'{map} <buffer> <script> {k} <ScriptCmd>I("{v}")->feedkeys("{flg}")<CR>'
   endfor
   if mode.use_roman
     for k in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
@@ -508,7 +507,7 @@ def UnmapAll()
   b:vim9skk_saved_keymap = []
 enddef
 
-def I(c: string, after: string): string
+def I(chain: string): string
   var prefix = ''
   if skkmode ==# skkmode_select
     prefix = Complete()
@@ -516,10 +515,10 @@ def I(c: string, after: string): string
     GetTarget()
       ->Split('*')[0]
       ->RemoveMarker()
-      ->AddStr(after)
+      ->AddStr(chain)
       ->ShowRecent()
   endif
-  return prefix .. after
+  return prefix .. chain
 enddef
 
 def SetMidasi(key: string = ''): string
