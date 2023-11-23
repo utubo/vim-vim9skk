@@ -616,7 +616,11 @@ def GetAllKouho(target: string)
     ->Split('*')
   okuri = o
   # 候補を検索する
-  henkan_key = $'{midasi}{okuri_table->get(okuri->matchstr('^.'), '')}' # `ほげf`
+  const okuri_key = okuri_table->get(okuri
+    ->substitute('^っ*', '', '')
+    ->matchstr('^.'), ''
+  )
+  henkan_key = $'{midasi}{okuri_key}' # `ほげf`
   kouho = [midasi]
   for path in [g:vim9skk.jisyo_recent, g:vim9skk.jisyo_user] + g:vim9skk.jisyo
     kouho += GetKouhoFromJisyo(path, henkan_key)
