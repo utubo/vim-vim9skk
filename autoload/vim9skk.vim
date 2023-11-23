@@ -413,6 +413,20 @@ def EscapeForMap(key: string): string
     ->substitute('\', '<Bslash>', 'g')
 enddef
 
+def MapFunction(keys: any, f: string, enable: bool = true)
+  for key in [keys ?? []]->flattennew() # keysはlist<string>またはstring
+    if enable
+      if skkmode ==# skkmode_select || mode.use_roman || abbr_chars->Excludes(key)
+        const nowait = len(key) ==# 1 ? '<nowait>' : ''
+        execute $'map! <buffer> <script> {nowait} {key} <ScriptCmd>{f}->feedkeys("nit")<CR>'
+      endif
+    else
+      silent! execute $'unmap! <buffer> <script> {key}'
+      get(b:, 'vim9skk_saved_roman', {})->get(key, [])->ForEach((m) => mapset(m))
+    endif
+  endfor
+enddef
+
 # <buffer>にマッピングしないと他のプラグインに取られちゃう
 def MapToBuf()
   if !g:vim9skk_enable
@@ -438,7 +452,7 @@ def MapToBuf()
   MapFunction(g:vim9skk.keymap.abbr,     'ToggleAbbr()')
   MapFunction(g:vim9skk.keymap.midasi,   'SetMidasi()')
   MapMidasiMode()
-  MapSelectMode(kouho)
+  MapSelectMode(!!kouho)
 enddef
 
 def MapRoman()
@@ -458,23 +472,6 @@ def MapRoman()
   endif
 enddef
 
-def MapFunction(keys: any, f: string, enable: bool = true)
-  for key in [keys ?? []]->flattennew() # keysはlist<string>またはstring
-    const k = key
-      ->substitute('|', '<Bar>', 'g')
-      ->substitute('\\', '<Bslash>', 'g')
-    if enable
-      if skkmode ==# skkmode_select || mode.use_roman || abbr_chars->Excludes(key)
-        const nowait = len(key) ==# 1 ? '<nowait>' : ''
-        execute $'map! <buffer> <script> {nowait} {k} <ScriptCmd>{f}->feedkeys("nit")<CR>'
-      endif
-    else
-      silent! execute $'unmap! <buffer> <script> {k}'
-      get(b:, 'vim9skk_saved_roman', {})->get(key, [])->ForEach((m) => mapset(m))
-    endif
-  endfor
-enddef
-
 def MapMidasiMode()
   if g:vim9skk_enable
     const enable = skkmode !=# skkmode_direct
@@ -484,9 +481,8 @@ def MapMidasiMode()
   endif
 enddef
 
-def MapSelectMode(k: any)
+def MapSelectMode(enable: bool)
   if g:vim9skk_enable
-    const enable = !!k
     MapFunction(g:vim9skk.keymap.next, 'Select(1)', enable)
     MapFunction(g:vim9skk.keymap.prev, 'Select(-1)', enable)
   endif
@@ -661,7 +657,6 @@ def Complete(chain: string = ''): string
   kouho = []
   henkan_key = ''
   ToggleAbbr(false)
-  MapSelectMode([])
   return chain
     .. GetTarget()
     ->RemoveMarker()
@@ -701,7 +696,7 @@ def PopupKouho()
   if !kouho
     return
   endif
-  MapSelectMode(kouho)
+  MapSelectMode(true)
   if g:vim9skk.popup_maxheight <= 0
     return
   endif
@@ -732,7 +727,7 @@ def HighlightKouho()
 enddef
 
 def CloseKouho()
-  MapSelectMode([])
+  MapSelectMode(false)
   if popup_kouho_id !=# 0
     popup_close(popup_kouho_id)
     popup_kouho_id = 0
