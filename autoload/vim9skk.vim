@@ -331,7 +331,7 @@ enddef
 
 def SetMode(m: number): string
   mode = GetModeSettings(m)
-  MapToBuf()
+  MapDirectMode()
   if skkmode !=# skkmode_select
     CloseKouho()
   endif
@@ -432,11 +432,17 @@ def MapToBuf()
   if !g:vim9skk_enable
     return
   endif
+  UnmapAll()
+  b:vim9skk_saved_keymap = maplist()->filter((_, m) => m.buffer)
+  MapDirectMode()
+  MapMidasiMode()
+  MapSelectMode(!!kouho)
+enddef
+
+def MapDirectMode()
   if get(b:, 'vim9skk_keymapped', 0) ==# mode.id
     return
   endif
-  UnmapAll()
-  b:vim9skk_saved_keymap = maplist()->filter((_, m) => m.buffer)
   b:vim9skk_keymapped = mode.id
   MapRoman()
   b:vim9skk_saved_roman = {}
@@ -451,19 +457,16 @@ def MapToBuf()
   MapFunction(g:vim9skk.keymap.alphabet, 'ToggleMode(mode_alphabet)')
   MapFunction(g:vim9skk.keymap.abbr,     'ToggleAbbr()')
   MapFunction(g:vim9skk.keymap.midasi,   'SetMidasi()')
-  MapMidasiMode()
-  MapSelectMode(!!kouho)
 enddef
 
 def MapRoman()
-  if mode.id ==# mode_abbr
-    return
-  endif
+  const map = mode.use_roman ? 'map!' : 'noremap! <nowait>'
+  const flg = mode.use_roman ? 'it' : 'nit'
   for [key, value] in mode.items
     const k = key->EscapeForMap()
     const c = key->escape('"|\\')
     const v = value->escape('"|\\')
-    execute $'map! <buffer> <script> {k} <ScriptCmd>I("{c}", "{v}")->feedkeys("it")<CR>'
+    execute $'{map} <buffer> <script> {k} <ScriptCmd>I("{c}", "{v}")->feedkeys("{flg}")<CR>'
   endfor
   if mode.use_roman
     for k in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
@@ -499,12 +502,10 @@ def UnmapAll()
       ->substitute('\', '<Bslash>', 'g')
     silent! execute $'unmap! <buffer> <script> {lhs}'
   endfor
-  if !!get(b:, 'vim9skk_saved_keymap', {})
-    for m in b:vim9skk_saved_keymap
-      mapset(m)
-    endfor
-    b:vim9skk_saved_keymap = {}
-  endif
+  for m in get(b:, 'vim9skk_saved_keymap', [])
+    mapset(m)
+  endfor
+  b:vim9skk_saved_keymap = []
 enddef
 
 def I(c: string, after: string): string
