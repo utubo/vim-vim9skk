@@ -39,6 +39,7 @@ const roman_table = {
   sha: 'しゃ', shi: 'し',   shu: 'しゅ', she: 'しぇ', sho: 'しょ',
   tya: 'ちゃ', tyu: 'ちゅ', tye: 'ちぇ', tyo: 'ちょ',
   cha: 'ちゃ', chi: 'ち',   chu: 'ちゅ', che: 'ちぇ', cho: 'ちょ',
+  tsa: 'つぁ', tsi: 'つぃ', tsu: 'つ',   tse: 'つぇ', tso: 'つぉ',
   tha: 'てゃ', thi: 'てぃ', thu: 'てゅ', the: 'てぇ', tho: 'てょ',
   nya: 'にゃ', nyu: 'にゅ', nye: 'にぇ', nyo: 'にょ',
   hya: 'ひゃ', hyu: 'ひゅ', hye: 'ひぇ', hyo: 'ひょ',
@@ -46,7 +47,6 @@ const roman_table = {
   rya: 'りゃ', ryu: 'りゅ', rye: 'りぇ', ryo: 'りょ',
   lya: 'ゃ', lyu: 'ゅ', lyo: 'ょ', ltu: 'っ', lwa: 'ゎ',
   xya: 'ゃ', xyu: 'ゅ', xyo: 'ょ', xtu: 'っ', xwa: 'ゎ',
-  tsu: 'つ',
   # 2文字
   cc: 'っc',
   ja: 'じゃ', ji: 'じ', ju: 'じゅ', je: 'じぇ', jo: 'じょ', jj: 'っj',
@@ -323,7 +323,6 @@ def CreateModeSettings(m: number): any
       id: mode_abbr,
       label: g:vim9skk.mode_label.abbr,
       use_roman: false,
-      # マッピングしないけど…
       items: abbr_chars->ToItems((i) => [i, i])
     }
   endif
@@ -445,6 +444,7 @@ def MapDirectMode()
   endif
   b:vim9skk_keymapped = mode.id
   MapRoman()
+  # 見出しモードや選択モードから戻ってきたときのためのバックアップ
   b:vim9skk_saved_roman = {}
   for key in g:vim9skk.keymap->values()->flattennew()
     b:vim9skk_saved_roman[key] = [
