@@ -28,7 +28,6 @@ INTRODUCTION			|vim9skk-introduction|
 USAGE				|vim9skk-usage|
 INTERFACE			|vim9skk-interface|
   VARIABLES			  |vim9skk-variables|
-  KEY-MAPPINGS			  |vim9skk-key-mappings|
   COMMANDS			  |vim9skk-commands|
   EVENTS			  |vim9skk-events|
 TODO				|vim9skk-todo|
@@ -77,10 +76,6 @@ g:vim9skk_mode					*g:vim9skk_mode*
 >
 	autocmd User Vim9skkModeChanged redraws!
 <
-
-g:vim9skk_selectable				*g:vim9skk_selectable*
-	選択できる変換候補がある場合true、それ以外の場合false
-
 g:vim9skk					*g:vim9skk*
 	各種設定
 	jisyo
@@ -93,30 +88,62 @@ g:vim9skk					*g:vim9skk*
 		「最後に実行した変換」辞書はvimを閉じるときに保存されます
 	recent
 		「最後に実行した変換」辞書の最大件数
-	space
-		全角モード時の空白文字
-		デフォルト: 半角空白
 	parens
-		全角括弧のリスト
+		全角括弧のリストです
 		この文字列に変換した場合、カーソルを1つ左に移動します
 	marker_midasi
-		見出しのマーカー
+		見出しのマーカーです
 		デフォルト: `▽`
 	marker_select
-		選択モードのマーカー
+		選択モードのマーカーです
 		デフォルト: `▼`
 	mode_label
-		現在のモードを表す文字
+		現在のモードを表す文字です
 	mode_label_timeout
 		現在のモードのポップアップ表示時間(ミリ秒)
 		0で非表示
 	popup_maxheight
-		変換候補の最大表示行数
+		変換候補の最大表示行数です
 		0で非表示
 	search_limit
 		候補探索の試行上限です
 	disable_default_mappings
 		起動時にデフォルトのキーマップを割り当てないようにします
+	keymap
+		キーマップです
+		空文字を指定すると割り当て無しにできます
+		toggle
+			vim9skkのオンオフをトグルします
+			全角英数モードやabbrモードの場合は、ひらがなモードに切り替えます
+		enable
+			vim9skkを有効にします
+		disable
+			vim9skkを無効にします
+		kana
+			カナモードをトグルします
+		hankaku
+			半角カナモードをトグルします
+		alphabet
+			全角英数モードをトグルします
+		abbr
+			abbrevモードをトグルします
+		hira
+			ひらがなモードに切り替えます
+		select
+			選択モード中に切り替えます
+			既に選択モードの場合は、次の候補を選択します
+			見出しモードでない場合は無効です
+			`<Space>`と同様
+		next
+			次の候補を選択します
+		prev
+			前の候補を選択します
+		complete
+			変換を確定します
+			選択モードでない場合は無効です
+			`<CR>`と同様
+		cancel
+			一番上の候補(無変換
 
 	デフォルト
 >
@@ -124,7 +151,6 @@ g:vim9skk					*g:vim9skk*
 		jisyo_user: '~/VIM9SKK-JISYO.user',
 		jisyo_recent: '~/VIM9SKK-JISYO.recent',
 		recent: 1000,
-		space: ' ',
 		parens: [
 			'（）', '〔〕', '［］', '｛｝', '〈〉',
 			'《》', '「」', '『』', '【】'
@@ -142,54 +168,26 @@ g:vim9skk					*g:vim9skk*
 		mode_label_timeout: 3000,
 		popup_maxheight: 20,
 		search_limit: 100,
-		disable_default_mappings: false,
+		disable_default_mappings: false
+		keymap: {
+			toggle: '<C-j>',
+			enable: '',
+			disable: '',
+			kata: 'q',
+			hankaku: '<C-q>',
+			alphabet: 'L',
+			abbr: '/',
+			midasi: 'Q',
+			select: '<Space>',
+			next: '<Tab>',
+			prev: '<S-Tab>',
+			complete: '<CR>',
+			cancel: '<C-g>',
+		},
 
 ------------------------------------------------------------------------------
 KEY-MAPPINGS					*vim9skk-key-mappings*
 
-<Plug>(vim9skk-enable)				*<Plug>(vim9skk-enable)*
-	vim9skkの有効にします
-
-<Plug>(vim9skk-disable)				*<Plug>(vim9skk-disable)*
-	vim9skkの無効にします
-
-<Plug>(vim9skk-toggle)				*<Plug>(vim9skk-toggle)*
-	vim9skkのオンオフをトグルします
-	全角英数モードやabbrモードの場合は、ひらがなモードに切り替えます
-
-<Plug>(vim9skk-kana)				*<Plug>(vim9skk-kana)*
-	カナモードをトグルします
-
-<Plug>(vim9skk-hankaku)				*<Plug>(vim9skk-hankaku)*
-	半角カナモードをトグルします
-
-<Plug>(vim9skk-alphabet)			*<Plug>(vim9skk-alphabet)*
-	全角英数モードをトグルします
-
-<Plug>(vim9skk-abbr)				*<Plug>(vim9skk-abbr)*
-	abbrevモードをトグルします
-
-<Plug>(vim9skk-hira)				*<Plug>(vim9skk-hira)*
-	ひらがなモードに切り替えます
-
-<Plug>(vim9skk-select)				*<Plug>(vim9skk-select)*
-	選択モード中に切り替えます
-	既に選択モードの場合は、次の候補を選択します
-	見出しモードでない場合は無効です
-	`<Space>`と同様
-
-<Plug>(vim9skk-next)				*<Plug>(vim9skk-next)*
-	次の候補を選択します
-
-<Plug>(vim9skk-prev)				*<Plug>(vim9skk-prev)*
-
-<Plug>(vim9skk-complete)			*<Plug>(vim9skk-complete)*
-	変換を確定します
-	選択モードでない場合は無効です
-	`<CR>`と同様
-
-<Plug>(vim9skk-cancel)				*<Plug>(vim9skk-cancel)*
-	一番上の候補(無変換)で確定します
 
 						*vim9skk-default-key-mappings*
 default key mappings

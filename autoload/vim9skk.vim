@@ -23,7 +23,6 @@ var jisyo = {}
 var jisyo_encode = {}
 var popup_mode_id = 0
 var popup_kouho_id = 0
-var vim9skkmap = {}
 
 const roman_table = {
   # 4文字
@@ -173,25 +172,18 @@ enddef
 def Excludes(a: list<any>, b: any): bool
   return a->index(b) ==# -1
 enddef
+
+def ForEach(a: list<any>, F: func)
+  for v in a
+    if !!v
+      F(v)
+    endif
+  endfor
+enddef
 # }}}
 
 # 基本 {{{
-def MapPlugKey(key: string, f: string)
-  execute $'map! <script> <Plug>({key}) <ScriptCmd>{f}->feedkeys("nit")<CR>'
-enddef
-
 def Init()
-  MapPlugKey('vim9skk-kana',     'ToggleMode(mode_kata)')
-  MapPlugKey('vim9skk-hankaku',  'ToggleMode(mode_hankaku)')
-  MapPlugKey('vim9skk-alphabet', 'ToggleMode(mode_alphabet)')
-  MapPlugKey('vim9skk-abbr',     'ToggleAbbr()')
-  MapPlugKey('vim9skk-hira',     'SetMode(mode_hira)')
-  MapPlugKey('vim9skk-midasi',   'SetMidasi()')
-  MapPlugKey('vim9skk-select',   'StartSelect()')
-  MapPlugKey('vim9skk-prev',     'Select(-1)')
-  MapPlugKey('vim9skk-next',     'Select(1)')
-  MapPlugKey('vim9skk-complete', 'Complete()')
-  MapPlugKey('vim9skk-cancel',   'Select(-kouho_index)->Complete()')
   augroup vim9skk
     autocmd!
     autocmd BufEnter * MapToBuf()
@@ -348,10 +340,17 @@ def SetMode(m: number): string
 enddef
 
 def ToDirectMode(chain: string = ''): string
-  skkmode = skkmode_direct
+  SetSkkMode(skkmode_direct)
   start_pos = GetPos()
   CloseKouho()
   return chain
+enddef
+
+def SetSkkMode(s: number)
+  if skkmode !=# s
+    skkmode = s
+    MapSkkKeys()
+  endif
 enddef
 
 def ToggleMode(m: number): string
@@ -405,41 +404,6 @@ enddef
 # }}}
 
 # キー入力 {{{
-export def Vim9skkMap(args: string)
-  const flags = ['<buffer>', '<nowait>', '<silent>', '<special>', '<script>', '<expr>', '<unique>']
-  const a = args->split('\\\@<! \+')
-  const i = a->indexof((_, v) => flags->Excludes(v))
-  var flg = !i ? [] : a[0 : i - 1]
-  const key = a[i]
-  const rhs = a[i + 1 :]->join(' ')->substitute('\\\(.\)', '\1', 'g')
-  var nowait = ''
-  if flg->Includes('<nowait>')
-    nowait = '<nowait>'
-    flg->filter((_, v) => v !=# '<nowait>')
-  endif
-  const v = key
-    ->escape('"|\\')
-    ->substitute('\n\|<CR>', '\\n', 'g')
-  vim9skkmap[key] = {
-    lhs: key,
-    map: $'noremap! <buffer> {nowait} {key} <ScriptCmd>Vim9skkMapExecute("{v}")<CR>'
-  }
-  execute $'noremap! {flg} <Plug>(vim9skk-map){key} {rhs}'
-enddef
-
-def Vim9skkMapExecute(key: string)
-  g:vim9skk_savekey = key
-  const k = key
-    ->substitute("\n", "\<CR>", '')
-  feedkeys($"\<Plug>(vim9skk-map){k}", 'nit')
-enddef
-
-def PopSaveKey(): string
-  const k = g:vim9skk_savekey
-  g:vim9skk_savekey = ''
-  return k
-enddef
-
 def EscapeForMap(key: string): string
   return key
     ->substitute('<', '<LT>', 'g')
@@ -470,11 +434,55 @@ def MapToBuf()
       execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{k}")->feedkeys("it")<CR>'
     endfor
   endif
-  for m in vim9skkmap->values()
-    if mode.use_roman || abbr_chars->Excludes(m.lhs)
-      execute m.map
+  b:vim9skk_saved_roman = {}
+  for key in g:vim9skk.keymap->values()->flattennew()
+    b:vim9skk_saved_roman[key] = [
+      maparg(key, 'i', false, true),
+      maparg(key, 'c', false, true),
+    ]
+  endfor
+  MapSkkKeys()
+enddef
+
+def MapSkkKey(keys: any, f: string)
+  for key in [keys ?? []]->flattennew()
+    if mode.use_roman || abbr_chars->Excludes(key)
+      execute $'map! <buffer> <script> {key} <ScriptCmd>{f}->feedkeys("nit")<CR>'
     endif
   endfor
+enddef
+
+def MapSkkKeys()
+  if !g:vim9skk_enable
+    return
+  endif
+  for [key, map] in b:vim9skk_saved_roman->items()
+    silent! execute $'unmap! <buffer> <script> {key}'
+    map->ForEach((m) => mapset(m))
+  endfor
+  MapSkkKey(g:vim9skk.keymap.kata,       'ToggleMode(mode_kata)')
+  MapSkkKey(g:vim9skk.keymap.hankaku,    'ToggleMode(mode_hankaku)')
+  MapSkkKey(g:vim9skk.keymap.alphabet,   'ToggleMode(mode_alphabet)')
+  MapSkkKey(g:vim9skk.keymap.abbr,       'ToggleAbbr()')
+  MapSkkKey(g:vim9skk.keymap.midasi,     'SetMidasi()')
+  if skkmode !=# skkmode_direct
+    MapSkkKey(g:vim9skk.keymap.select,   'StartSelect()')
+    MapSkkKey(g:vim9skk.keymap.complete, 'Complete()')
+    MapSkkKey(g:vim9skk.keymap.cancel,   'Select(-kouho_index)->Complete()')
+  endif
+  MapSelectKouho(kouho)
+enddef
+
+def MapSelectKouho(k: any)
+  if !k
+    for key in [g:vim9skk.keymap.next, g:vim9skk.keymap.prev]->flattennew()
+      silent! execute $'unmap! <buffer> <script> {key}'
+      get(b:, 'vim9skk_saved_roman', {})->get(key, [])->ForEach((m) => mapset(m))
+    endfor
+  else
+    MapSkkKey(g:vim9skk.keymap.next, 'Select(1)')
+    MapSkkKey(g:vim9skk.keymap.prev, 'Select(-1)')
+  endif
 enddef
 
 def UnmapAll()
@@ -482,7 +490,7 @@ def UnmapAll()
     return
   endif
   b:vim9skk_keymapped = 0
-  for m in maplist()->filter((_, m) => m.script) + vim9skkmap->values()
+  for m in maplist()->filter((_, m) => m.script)
     const lhs = m.lhs
       ->substitute('|', '<BAR>', 'g')
       ->substitute('\', '<Bslash>', 'g')
@@ -521,7 +529,7 @@ def SetMidasi(key: string = ''): string
     pos = g:vim9skk.marker_select->len()
     prefix = Complete()
   endif
-  skkmode = skkmode_midasi
+  SetSkkMode(skkmode_midasi)
   start_pos = max([0, GetPos() - pos])
   return prefix .. g:vim9skk.marker_midasi .. key->tolower()
 enddef
@@ -545,19 +553,12 @@ def ReplaceTarget(after: string): string
 enddef
 
 def StartSelect(): string
-  if !g:vim9skk_enable || skkmode ==# skkmode_direct
-    return PopSaveKey()
-  endif
-  if skkmode ==# skkmode_select
-    return Select(1)
-  endif
-  var target = GetTarget()
-  GetAllKouho(target)
+  GetTarget()->GetAllKouho()
   if !kouho
     CloseKouho()
     return ''
   endif
-  skkmode = skkmode_select
+  SetSkkMode(skkmode_select)
   kouho_index = 0
   PopupKouho()
   return Select(1)
@@ -598,6 +599,7 @@ enddef
 
 def GetAllKouho(target: string)
   if !target
+    kouho = []
     return
   endif
   # `▽ほげ*ふが`を見出しと送り仮名に分割する
@@ -627,10 +629,7 @@ def GetSelectedKouho(): string
 enddef
 
 def Select(d: number): string
-  if !kouho || !g:vim9skk_enable || skkmode ==# skkmode_direct
-    return PopSaveKey()
-  endif
-  skkmode = skkmode_select
+  SetSkkMode(skkmode_select)
   kouho_index = Cyclic(kouho_index + d, len(kouho))
   const k = GetSelectedKouho()
   const after = g:vim9skk.marker_select .. k .. okuri
@@ -647,14 +646,12 @@ def AddLeftForParen(p: string): string
 enddef
 
 def Complete(chain: string = ''): string
-  if !g:vim9skk_enable || skkmode ==# skkmode_direct
-    return chain .. PopSaveKey()
-  endif
   const k = GetSelectedKouho()
   RegisterToRecentJisyo(henkan_key, k)
   kouho = []
   henkan_key = ''
   ToggleAbbr(false)
+  MapSelectKouho([])
   return chain
     .. GetTarget()
     ->RemoveMarker()
@@ -694,7 +691,7 @@ def PopupKouho()
   if !kouho
     return
   endif
-  g:vim9skk_selectable = true
+  MapSelectKouho(kouho)
   if g:vim9skk.popup_maxheight <= 0
     return
   endif
@@ -725,7 +722,7 @@ def HighlightKouho()
 enddef
 
 def CloseKouho()
-  g:vim9skk_selectable = false
+  MapSelectKouho([])
   if popup_kouho_id !=# 0
     popup_close(popup_kouho_id)
     popup_kouho_id = 0
@@ -788,7 +785,7 @@ export def RegisterToUserJisyo(key: string): list<string>
   }
   var result = []
   try
-    skkmode = skkmode_direct
+    SetSkkMode(skkmode_direct)
     autocmd vim9skk CmdlineEnter * ++once ShowMode(false)
     const value = input($'ユーザー辞書に登録({key}): ')->trim()
     if !value
@@ -804,7 +801,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     endif
   finally
     SetMode(save.mode_id)
-    skkmode = save.skkmode
+    SetSkkMode(save.skkmode)
     start_pos = save.start_pos
     okuri = save.okuri
   endtry
