@@ -802,6 +802,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     endif
   finally
     SetMode(save.mode_id)
+    SetSkkMode(save.skkmode)
     start_pos = save.start_pos
     okuri = save.okuri
   endtry
