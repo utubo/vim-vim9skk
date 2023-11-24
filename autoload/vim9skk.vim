@@ -21,6 +21,7 @@ var kouho = []
 var kouho_index = 0
 var jisyo = {}
 var jisyo_encode = {}
+var recentlies = []
 var popup_mode_id = 0
 var popup_kouho_id = 0
 
@@ -670,7 +671,7 @@ def ShowRecent(_target: string): string
     target = target->substitute('n$', 'ん', '')
   endif
   kouho = [target]
-  const [lines, enc] = ReadJisyo(g:vim9skk.jisyo_recent)
+  const [lines, enc] = ReadRecentJisyo()
   const head = target->IconvTo(enc)
   for j in lines
     if j->StartsWith(head)
@@ -810,6 +811,18 @@ export def RegisterToUserJisyo(key: string): list<string>
   return result
 enddef
 
+def ReadRecentJisyo(): list<any>
+  if !recentlies
+    const [p, enc] = ToFullPathAndEncode(g:vim9skk.jisyo_recent)
+    if !filereadable(p)
+      return [[], enc]
+    endif
+    var lines = readfile(p)
+    recentlies = [lines, enc]
+  endif
+  return recentlies
+enddef
+
 def RegisterToRecentJisyo(before: string, after: string)
   if !before || !after
     return
@@ -818,14 +831,16 @@ def RegisterToRecentJisyo(before: string, after: string)
   var afters = [after] + GetKouhoFromJisyo(g:vim9skk.jisyo_recent, before)
   const newline = $'{before} /{afters->Uniq()->join("/")}/'
   # 既存の行を削除してから先頭に追加する
-  var [lines, enc] = ReadJisyo(g:vim9skk.jisyo_recent)
+  var [lines, enc] = ReadRecentJisyo()
   const head = $'{before} '->IconvTo(enc)
   lines->filter((_, v) => !v->StartsWith(head))
-  jisyo[g:vim9skk.jisyo_recent] = [newline->IconvTo(enc)] + lines[: g:vim9skk.recent]
+  lines = [newline->IconvTo(enc)] + lines[: g:vim9skk.recent]
+  recentlies = [lines, enc]
+  jisyo[g:vim9skk.jisyo_recent] = lines->copy()->sort()
 enddef
 
 def SaveRecentlies()
-  var [lines, _] = ReadJisyo(g:vim9skk.jisyo_recent)
+  var [lines, _] = ReadRecentJisyo()
   if !!lines
     WriteJisyo(lines, g:vim9skk.jisyo_recent)
   endif
