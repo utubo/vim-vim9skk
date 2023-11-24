@@ -21,8 +21,7 @@ var kouho = []
 var kouho_index = 0
 var jisyo = {}
 var recentlies = {}
-var popup_mode_id = 0
-var popup_kouho_id = 0
+var pum_winid = 0
 
 const roman_table = {
   # 4文字
@@ -262,7 +261,7 @@ def OnCmdlineEnter()
   elseif getcmdtype() ==# ':'
     Disable(false)
   else
-    CloseModePopup()
+    ClosePum()
   endif
 enddef
 
@@ -375,9 +374,9 @@ enddef
 
 def ShowMode(popup_even_off: bool)
   g:vim9skk_mode = g:vim9skk_enable ? mode.label : g:vim9skk.mode_label.off
-  CloseModePopup()
+  ClosePum()
   if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || g:vim9skk_enable)
-    popup_mode_id = popup_create(g:vim9skk_mode, {
+    pum_winid = popup_create(g:vim9skk_mode, {
       col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
       line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
       time: g:vim9skk.mode_label_timeout,
@@ -386,10 +385,10 @@ def ShowMode(popup_even_off: bool)
   endif
 enddef
 
-def CloseModePopup()
-  if !!popup_mode_id
-    popup_close(popup_mode_id)
-    popup_mode_id = 0
+def ClosePum()
+  if !!pum_winid
+    popup_close(pum_winid)
+    pum_winid = 0
     redraw
   endif
 enddef
@@ -488,7 +487,7 @@ def UnmapAll()
     return
   endif
   b:vim9skk_keymapped = 0
-  for m in maplist()->filter((_, m) => m.script && m.buffer)
+  for m in maplist()->filter((_, m) => m.script) # cmdlineはm.buffer無し
     const lhs = m.lhs
       ->substitute('|', '<BAR>', 'g')
       ->substitute('\', '<Bslash>', 'g')
@@ -696,8 +695,7 @@ def PopupKouho()
   if g:vim9skk.popup_maxheight <= 0
     return
   endif
-  CloseModePopup()
-  popup_kouho_id = popup_create(kouho, {
+  pum_winid = popup_create(kouho, {
       cursorline: true,
       maxheight: g:vim9skk.popup_maxheight
     }->extend(
@@ -711,24 +709,20 @@ def PopupKouho()
         pos: 'topright',
     })
   )
-  win_execute(popup_kouho_id, 'syntax match PMenuExtra /;.*/')
+  win_execute(pum_winid, 'syntax match PMenuExtra /;.*/')
   HighlightKouho()
 enddef
 
 def HighlightKouho()
-  if popup_kouho_id !=# 0
-    win_execute(popup_kouho_id, $':{kouho_index + 1}')
+  if pum_winid !=# 0
+    win_execute(pum_winid, $':{kouho_index + 1}')
     redraw
   endif
 enddef
 
 def CloseKouho()
   MapSelectMode(false)
-  if popup_kouho_id !=# 0
-    popup_close(popup_kouho_id)
-    popup_kouho_id = 0
-    redraw
-  endif
+  ClosePum()
 enddef
 # }}}
 
