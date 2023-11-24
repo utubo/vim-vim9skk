@@ -488,7 +488,7 @@ def UnmapAll()
     return
   endif
   b:vim9skk_keymapped = 0
-  for m in maplist()->filter((_, m) => m.script)
+  for m in maplist()->filter((_, m) => m.script && m.buffer)
     const lhs = m.lhs
       ->substitute('|', '<BAR>', 'g')
       ->substitute('\', '<Bslash>', 'g')
@@ -537,11 +537,10 @@ def GetTarget(): string
 enddef
 
 def RemoveMarker(s: string): string
-  const result = s
+  return s
     ->substitute(g:vim9skk.marker_midasi, '', '')
     ->substitute(g:vim9skk.marker_select, '', '')
     ->substitute('*', '', '')
-  return result
 enddef
 
 def ReplaceTarget(after: string): string
