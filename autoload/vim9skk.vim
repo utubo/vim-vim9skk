@@ -187,7 +187,7 @@ def Init()
   augroup vim9skk
     autocmd!
     autocmd BufEnter * MapToBuf()
-    autocmd InsertEnter * OnInsertEnter()
+    autocmd InsertEnter * ShowMode(false)
     autocmd InsertLeave * OnInsertLeave()
     autocmd CmdlineEnter * OnCmdlineEnter()
     autocmd CmdlineLeave * OnCmdlineLeave()
@@ -196,7 +196,6 @@ def Init()
   for [k, v] in roman_table_items
     okuri_table[v->strcharpart(0, 1)] = k[0]
   endfor
-  okuri_table['っ'] = 'r'
   SetMode(mode_hira)
   initialized = true
 enddef
@@ -217,6 +216,9 @@ export def Enable()
 enddef
 
 export def Disable(popup_even_off: bool = true)
+  if !g:vim9skk_enable
+    return
+  endif
   if skkmode !=# skkmode_direct
     const target = GetTarget()
     if !!target
@@ -230,7 +232,7 @@ export def Disable(popup_even_off: bool = true)
   silent! doautocmd User Vim9skkDisbaled
 enddef
 
-export def ToggleSkk(): string
+export def ToggleSkk()
   if !mode.use_roman
     SetMode(mode_hira)
   elseif g:vim9skk_enable
@@ -238,11 +240,6 @@ export def ToggleSkk(): string
   else
     Enable()
   endif
-  return ''
-enddef
-
-def OnInsertEnter()
-  ShowMode(false)
 enddef
 
 def OnInsertLeave()
@@ -328,7 +325,7 @@ def CreateModeSettings(m: number): any
   endif
 enddef
 
-def SetMode(m: number): string
+def SetMode(m: number)
   mode = GetModeSettings(m)
   MapDirectMode()
   if skkmode !=# skkmode_select
@@ -336,7 +333,6 @@ def SetMode(m: number): string
   endif
   ShowMode(true)
   silent! doautocmd User Vim9skkModeChanged
-  return ''
 enddef
 
 def ToDirectMode(chain: string = ''): string
@@ -354,16 +350,16 @@ def SetSkkMode(s: number)
 enddef
 
 def ToggleMode(m: number): string
-  if skkmode !=# skkmode_direct
+  if skkmode ==# skkmode_direct
+    SetMode(mode.id !=# m ? m : mode_hira)
+    return ''
+  else
     const before = GetTarget()->RemoveMarker()
     const after = before
       ->SwapChars(hira_chars, kata_chars)
       ->SwapChars(alphabet_chars, abbr_chars)
     RegisterToRecentJisyo(before, after)
     return after->ReplaceTarget()->ToDirectMode()
-  else
-    SetMode(mode.id !=# m ? m : mode_hira)
-    return ''
   endif
 enddef
 
@@ -378,11 +374,7 @@ def ToggleAbbr(enable: bool = true): string
 enddef
 
 def ShowMode(popup_even_off: bool)
-  if !g:vim9skk_enable
-    g:vim9skk_mode = g:vim9skk.mode_label.off
-  else
-    g:vim9skk_mode = mode.label
-  endif
+  g:vim9skk_mode = g:vim9skk_enable ? mode.label : g:vim9skk.mode_label.off
   CloseModePopup()
   if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || g:vim9skk_enable)
     popup_mode_id = popup_create(g:vim9skk_mode, {
