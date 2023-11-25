@@ -20,7 +20,7 @@ var okuri = ''
 var kouho = []
 var kouho_index = 0
 var jisyo = {}
-var recentlies = {}
+var recent_jisyo = {}
 var pum_winid = 0
 
 const roman_table = {
@@ -190,7 +190,7 @@ def Init()
     autocmd InsertLeave * OnInsertLeave()
     autocmd CmdlineEnter * OnCmdlineEnter()
     autocmd CmdlineLeave * OnCmdlineLeave()
-    autocmd VimLeave * SaveRecentlies()
+    autocmd VimLeave * SaveRecentJisyo()
   augroup END
   for [k, v] in roman_table_items
     okuri_table[v->strcharpart(0, 1)] = k[0]
@@ -664,9 +664,6 @@ enddef
 # 予測変換ポップアップ {{{
 def ShowRecent(_target: string): string
   var target = _target
-  if mode.use_roman
-    target = target->substitute('n$', 'ん', '')
-  endif
   kouho = [target]
   const j = ReadRecentJisyo()
   const head = target->IconvTo(j.enc)
@@ -803,15 +800,15 @@ export def RegisterToUserJisyo(key: string): list<string>
 enddef
 
 def ReadRecentJisyo(): dict<any>
-  if !recentlies
+  if !recent_jisyo
     const [p, enc] = ToFullPathAndEncode(g:vim9skk.jisyo_recent)
     if !filereadable(p)
       return { lines: [], enc: enc }
     endif
     var lines = readfile(p)
-    recentlies = { lines: lines, enc: enc }
+    recent_jisyo = { lines: lines, enc: enc }
   endif
-  return recentlies
+  return recent_jisyo
 enddef
 
 def RegisterToRecentJisyo(before: string, after: string)
@@ -829,7 +826,7 @@ def RegisterToRecentJisyo(before: string, after: string)
   jisyo[g:vim9skk.jisyo_recent] = { lines: j.lines->copy()->sort(), enc: j.enc }
 enddef
 
-def SaveRecentlies()
+def SaveRecentJisyo()
   var j = ReadRecentJisyo()
   if !!j && !!j.lines
     WriteJisyo(j.lines, g:vim9skk.jisyo_recent)
