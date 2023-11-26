@@ -793,7 +793,7 @@ export def RegisterToUserJisyo(key: string): list<string>
       # ユーザー辞書に登録する
       const newline = $'{key} /{value}/'
       const j = ReadJisyo(g:vim9skk.jisyo_user)
-      jisyo[g:vim9skk.jisyo_user] = j.lines + [newline->IconvTo(j.enc)]
+      jisyo[g:vim9skk.jisyo_user].lines += [newline->IconvTo(j.enc)]
       WriteJisyo([newline], expand(g:vim9skk.jisyo_user), 'a')
       echo '登録しました'
       result += [value]
