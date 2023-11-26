@@ -461,10 +461,10 @@ enddef
 
 def MapRoman()
   const map = mode.use_roman ? 'map!' : 'noremap! <nowait>'
-  const flg = mode.use_roman ? 'it' : 'nit'
   for [key, value] in mode.items
     const k = key->EscapeForMap()
     const v = value->escape('"|\\')
+    const flg = mode.use_roman && value =~# '[a-z]$' ? 'it' : 'nit'
     execute $'{map} <buffer> <script> {k} <ScriptCmd>I("{v}")->feedkeys("{flg}")<CR>'
   endfor
   if mode.use_roman
