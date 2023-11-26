@@ -81,6 +81,7 @@ g:vim9skk					*g:vim9skk*
 	jisyo
 		辞書ファイルのパスの配列
 		`ファイル名:文字コード`の形式
+		ワイルドカードはvim9skkの初回起動時に展開します
 	jisyo_user
 		ユーザー辞書ファイルのパス
 	jisyo_recent

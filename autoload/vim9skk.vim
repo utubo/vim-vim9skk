@@ -195,6 +195,14 @@ def Init()
   for [k, v] in roman_table_items
     okuri_table[v->strcharpart(0, 1)] = k[0]
   endfor
+  var expanded = []
+  for j in g:vim9skk.jisyo
+    const [path, enc] = ToFullPathAndEncode(j)
+    for p in path->split('\n')
+      expanded += [$'{p}:{enc}']
+    endfor
+  endfor
+  g:vim9skk.jisyo = expanded
   SetMode(mode_hira)
   initialized = true
 enddef
@@ -725,7 +733,7 @@ enddef
 
 # 辞書操作 {{{
 def ToFullPathAndEncode(path: string): list<string>
-  const m = path->matchlist('\(.\+\):\([a-zA-Z0-9-]\+\)$')
+  const m = path->matchlist('\(.\+\):\([a-zA-Z0-9-]*\)$')
   return !m ? [expand(path), ''] : [expand(m[1]), m[2]]
 enddef
 
