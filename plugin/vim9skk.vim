@@ -35,7 +35,10 @@ var default = {
     cancel: '<C-g>',
   },
 }
-g:vim9skk = default->extend(get(g:, 'vim9skk', { }))
+g:vim9skk = get(g:, 'vim9skk', {})
+g:vim9skk->extend(default, 'keep')
+g:vim9skk.mode_label->extend(default.mode_label, 'keep')
+g:vim9skk.keymap->extend(default.keymap, 'keep')
 g:vim9skk_enable = false
 g:vim9skk_mode = g:vim9skk.mode_label.off
 
