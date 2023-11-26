@@ -229,7 +229,7 @@ export def Disable(popup_even_off: bool = true)
   if skkmode !=# skkmode_direct
     const target = GetTarget()
     if !!target
-      Complete()->feedkeys('nit')
+      Complete()->feedkeys('nitx')
     endif
   endif
   g:vim9skk_enable = false
