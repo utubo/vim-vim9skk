@@ -1,7 +1,7 @@
 vim9script
 
 var default = {
-  jisyo: ['~/SKK-JISYO.L:EUC-JP'],
+  jisyo: ['~/SKK-JISYO.L:EUC-JP', '~/SKK-JISYO.*.utf8:UTF8'],
   jisyo_user: '~/VIM9SKK-JISYO.user',
   jisyo_recent: '~/VIM9SKK-JISYO.recent',
   recent: 1000,
