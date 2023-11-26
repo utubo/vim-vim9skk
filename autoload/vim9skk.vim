@@ -240,7 +240,7 @@ export def Disable(popup_even_off: bool = true)
 enddef
 
 export def ToggleSkk()
-  if !mode.use_roman
+  if g:vim9skk_enable && !mode.use_roman
     SetMode(mode_hira)
   elseif g:vim9skk_enable
     Disable()
@@ -461,17 +461,18 @@ enddef
 
 def MapRoman()
   const map = mode.use_roman ? 'map!' : 'noremap! <nowait>'
+  if mode.use_roman
+    for k in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
+      silent! execute $'unmap! <buffer> <script> {k->tolower()}'
+      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{k}")->feedkeys("it")<CR>'
+    endfor
+  endif
   for [key, value] in mode.items
     const k = key->EscapeForMap()
     const v = value->escape('"|\\')
     const flg = mode.use_roman && value =~# '[a-z]$' ? 'it' : 'nit'
     execute $'{map} <buffer> <script> {k} <ScriptCmd>I("{v}")->feedkeys("{flg}")<CR>'
   endfor
-  if mode.use_roman
-    for k in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
-      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{k}")->feedkeys("it")<CR>'
-    endfor
-  endif
 enddef
 
 def MapMidasiMode()
