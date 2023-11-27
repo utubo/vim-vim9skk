@@ -631,7 +631,7 @@ def GetAllKouho(target: string)
 enddef
 
 def Cyclic(a: number, max: number): number
-  return (a + max) % max
+  return max ==# 0 ? 0 : ((a + max) % max)
 enddef
 
 def GetSelectedKouho(): string
@@ -673,7 +673,7 @@ enddef
 # 予測変換ポップアップ {{{
 def ShowRecent(_target: string): string
   var target = _target
-  kouho = [target]
+  kouho = []
   const j = ReadRecentJisyo()
   const head = target->IconvTo(j.enc)
   for line in j.lines
@@ -683,7 +683,7 @@ def ShowRecent(_target: string): string
   endfor
   if 1 < len(kouho)
     kouho = kouho->Uniq()
-    kouho_index = 0
+    kouho_index = -1
     okuri = ''
     PopupKouho()
   endif
@@ -722,6 +722,7 @@ enddef
 def HighlightKouho()
   if pum_winid !=# 0
     win_execute(pum_winid, $':{kouho_index + 1}')
+    popup_setoptions(pum_winid, { cursorline: 0 <= kouho_index })
     redraw
   endif
 enddef
