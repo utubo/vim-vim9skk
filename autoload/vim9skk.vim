@@ -15,7 +15,6 @@ var initialized = false
 var mode = { id: mode_hira, use_roman: true, items: [] }
 var skkmode = skkmode_direct
 var start_pos = 0
-var end_pos = 0
 var henkan_key = ''
 var okuri = ''
 var kouho = []
@@ -537,10 +536,6 @@ def SetMidasi(key: string = ''): string
   SetSkkMode(skkmode_midasi)
   start_pos = max([0, GetPos() - pos])
   return prefix .. g:vim9skk.marker_midasi .. key->tolower()
-enddef
-
-def MarkEnd(): string
-  end_pos = GetPos()
 enddef
 # }}}
 
