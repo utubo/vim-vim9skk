@@ -25,6 +25,7 @@ var jisyo = {}
 var recent_jisyo = {}
 var chain_jisyo = {}
 var pum_winid = 0
+var lock_redraw = false
 
 const roman_table = {
   # 4文字
@@ -294,6 +295,12 @@ def OnCmdlineLeave()
     SetMode(mode_hira)
   endif
 enddef
+
+def Redraw()
+  if !lock_redraw
+    redraw
+  endif
+enddef
 # }}}
 
 # 入力モード制御 {{{
@@ -404,7 +411,7 @@ def ShowMode(popup_even_off: bool)
       line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
       time: g:vim9skk.mode_label_timeout,
     })
-    redraw
+    Redraw()
   endif
 enddef
 
@@ -412,7 +419,7 @@ def ClosePum()
   if !!pum_winid
     popup_close(pum_winid)
     pum_winid = 0
-    redraw
+    Redraw()
   endif
 enddef
 # }}}
@@ -725,8 +732,11 @@ enddef
 
 # 候補ポップアップ {{{
 def PopupKouho()
+  lock_redraw = true
   CloseKouho()
+  lock_redraw = false
   if !kouho
+    Redraw()
     return
   endif
   MapSelectMode(true)
@@ -757,7 +767,7 @@ def HighlightKouho()
   if pum_winid !=# 0
     win_execute(pum_winid, $':{kouho_index + 1}')
     popup_setoptions(pum_winid, { cursorline: 0 <= kouho_index })
-    redraw
+    Redraw()
   endif
 enddef
 
