@@ -15,12 +15,15 @@ var initialized = false
 var mode = { id: mode_hira, use_roman: true, items: [] }
 var skkmode = skkmode_direct
 var start_pos = 0
+var end_pos = 1
 var henkan_key = ''
 var okuri = ''
 var kouho = []
 var kouho_index = 0
+var last_word = ''
 var jisyo = {}
 var recent_jisyo = {}
+var chain_jisyo = {}
 var pum_winid = 0
 
 const roman_table = {
@@ -186,7 +189,7 @@ def Init()
   augroup vim9skk
     autocmd!
     autocmd BufEnter * MapToBuf()
-    autocmd InsertEnter * ShowMode(false)
+    autocmd InsertEnter * OnInsertEnter()
     autocmd InsertLeave * OnInsertLeave()
     autocmd CmdlineEnter * OnCmdlineEnter()
     autocmd CmdlineLeave * OnCmdlineLeave()
@@ -234,6 +237,7 @@ export def Disable(popup_even_off: bool = true)
   endif
   g:vim9skk_enable = false
   UnmapAll()
+  CloseKouho()
   ShowMode(popup_even_off)
   silent! doautocmd User Vim9skkModeChanged
   silent! doautocmd User Vim9skkDisbaled
@@ -249,17 +253,28 @@ export def ToggleSkk()
   endif
 enddef
 
+def OnInsertEnter()
+  ShowMode(false)
+enddef
+
 def OnInsertLeave()
-  if skkmode !=# skkmode_direct
-    const target = GetTarget()
-    setline('.', getline('.')->substitute(
-      $'\%{start_pos}c{"."->repeat(strchars(target))}',
-      target->RemoveMarker(),
-      ''
-    ))
-    ToDirectMode()
-    ToggleAbbr(false)
+  if !g:vim9skk_enable
+    return
   endif
+  CloseKouho()
+  if skkmode ==# skkmode_direct
+    return
+  endif
+  const before = GetTarget()
+  const after = before->RemoveMarker()
+  setline('.', getline('.')->substitute(
+    $'\%{start_pos}c{"."->repeat(strchars(before))}',
+    after,
+    ''
+  ))
+  ToDirectMode()
+  ToggleAbbr(false)
+  RegisterToChainJisyo(after)
 enddef
 
 def OnCmdlineEnter()
@@ -275,7 +290,7 @@ enddef
 
 def OnCmdlineLeave()
   CloseKouho()
-  if mode.id ==# mode_abbr
+  if g:vim9skk_enable && mode.id ==# mode_abbr
     SetMode(mode_hira)
   endif
 enddef
@@ -342,9 +357,9 @@ def SetMode(m: number)
   silent! doautocmd User Vim9skkModeChanged
 enddef
 
-def ToDirectMode(chain: string = ''): string
+def ToDirectMode(chain: string = '', delta: number = 0): string
   SetSkkMode(skkmode_direct)
-  start_pos = GetPos()
+  start_pos = GetPos() - delta
   CloseKouho()
   return chain
 enddef
@@ -534,7 +549,10 @@ def SetMidasi(key: string = ''): string
     prefix = Complete()
   endif
   SetSkkMode(skkmode_midasi)
-  start_pos = max([0, GetPos() - pos])
+  const next_start_pos = max([0, GetPos() - pos])
+  const next_word = GetLine()->matchstr($'\%{end_pos}c.*\%{next_start_pos}c')
+  RegisterToChainJisyo(next_word)
+  start_pos = next_start_pos
   return prefix .. g:vim9skk.marker_midasi .. key->tolower()
 enddef
 # }}}
@@ -656,21 +674,33 @@ def AddLeftForParen(p: string): string
 enddef
 
 def Complete(chain: string = ''): string
+  const before = GetTarget()
+  const after = before->RemoveMarker()
+  const delta = before->len() - after->len()
   const k = GetSelectedKouho()
   RegisterToRecentJisyo(henkan_key, k)
   kouho = []
   henkan_key = ''
   ToggleAbbr(false)
   return chain ..
-    GetTarget()
-      ->RemoveMarker()
+    after
+      ->RegisterToChainJisyo()
       ->AddLeftForParen()
       ->ReplaceTarget()
-      ->ToDirectMode()
+      ->ToDirectMode(delta)
+      ->ShowChainJisyo()
 enddef
 # }}}
 
 # 予測変換ポップアップ {{{
+def AddDetail(list: list<string>, detail: string): list<string>
+  var result = []
+  for i in list
+    result += [$'{i};{detail}']
+  endfor
+  return result
+enddef
+
 def ShowRecent(_target: string): string
   var target = _target
   kouho = []
@@ -682,10 +712,12 @@ def ShowRecent(_target: string): string
     endif
   endfor
   if 1 < len(kouho)
-    kouho = kouho->Uniq()
+    kouho = kouho->Uniq()->AddDetail('変換履歴')
     kouho_index = -1
     okuri = ''
     PopupKouho()
+  else
+    CloseKouho()
   endif
   return ''
 enddef
@@ -715,7 +747,9 @@ def PopupKouho()
         pos: 'topright',
     })
   )
-  win_execute(pum_winid, 'syntax match PMenuExtra /;.*/')
+  silent! win_execute(pum_winid, ':%s/;/\t/g')
+  win_execute(pum_winid, 'setlocal tabstop=12')
+  win_execute(pum_winid, 'syntax match PMenuExtra /\t.*/')
   HighlightKouho()
 enddef
 
@@ -782,6 +816,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     mode_id: mode.id,
     skkmode: skkmode,
     start_pos: start_pos,
+    end_pos: end_pos,
     okuri: okuri,
   }
   var result = []
@@ -804,6 +839,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     SetMode(save.mode_id)
     SetSkkMode(save.skkmode)
     start_pos = save.start_pos
+    end_pos = save.end_pos
     okuri = save.okuri
   endtry
   return result
@@ -846,6 +882,27 @@ enddef
 export def RefreshJisyo()
   jisyo = {}
   echo '辞書をリフレッシュしました'
+enddef
+# }}}
+
+# 連鎖補完 {{{
+# 🧪様子見中
+def RegisterToChainJisyo(next_word: string): string
+  if !!last_word && !!next_word
+    chain_jisyo[last_word] = ([next_word] + chain_jisyo->get(last_word, []))->Uniq()
+  endif
+  last_word = next_word
+  end_pos = start_pos + next_word->len()
+  return next_word
+enddef
+
+def ShowChainJisyo(chain: string): string
+  if chain_jisyo->has_key(last_word)
+    kouho = chain_jisyo[last_word]->AddDetail('入力履歴')
+    kouho_index = -1
+    PopupKouho()
+  endif
+  return chain
 enddef
 # }}}
 
