@@ -25,7 +25,6 @@ var jisyo = {}
 var recent_jisyo = {}
 var chain_jisyo = {}
 var pum_winid = 0
-var lock_redraw = false
 
 const roman_table = {
   # 4文字
@@ -295,11 +294,21 @@ def OnCmdlineLeave()
     SetMode(mode_hira)
   endif
 enddef
+# }}}
+
+# ちらつき防止 {{{
+var lock_redraw = false
 
 def Redraw()
   if !lock_redraw
     redraw
   endif
+enddef
+
+def ExecuteWithoutRedraw(F: func)
+  lock_redraw = true
+  F()
+  lock_redraw = false
 enddef
 # }}}
 
@@ -732,9 +741,7 @@ enddef
 
 # 候補ポップアップ {{{
 def PopupKouho()
-  lock_redraw = true
-  CloseKouho()
-  lock_redraw = false
+  CloseKouho->ExecuteWithoutRedraw()
   if !kouho
     Redraw()
     return
