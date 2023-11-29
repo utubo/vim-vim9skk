@@ -749,21 +749,22 @@ def PopupKouho()
   MapSelectMode(true)
   if g:vim9skk.popup_maxheight <= 0
     return
+    endif
+  var pum_options = {
+    col: 'cursor',
+    line: 'cursor-1',
+    pos: 'botright',
+    cursorline: true,
+    maxheight: g:vim9skk.popup_maxheight,
+  }
+  if mode() ==# 'c'
+    pum_options.col = getcmdscreenpos()
+    pum_options.line = &lines - 1
+  elseif screenrow() < &lines / 2
+    pum_options.line = 'cursor+1'
+    pum_options.pos = 'topright'
   endif
-  pum_winid = popup_create(kouho, {
-      cursorline: true,
-      maxheight: g:vim9skk.popup_maxheight
-    }->extend(
-      mode() ==# 'c' ? {
-        col: getcmdscreenpos(),
-        line: (&lines - 1),
-        pos: 'botright',
-      } : {
-        col: 'cursor',
-        line: 'cursor+1',
-        pos: 'topright',
-    })
-  )
+  pum_winid = popup_create(kouho, pum_options)
   silent! win_execute(pum_winid, ':%s/;/\t/g')
   win_execute(pum_winid, 'setlocal tabstop=12')
   win_execute(pum_winid, 'syntax match PMenuExtra /\t.*/')
