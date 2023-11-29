@@ -708,7 +708,7 @@ def Complete(chain: string = ''): string
 enddef
 # }}}
 
-# 予測変換ポップアップ {{{
+# 変換履歴をポップアップ {{{
 def AddDetail(list: list<string>, detail: string): list<string>
   var result = []
   for i in list
@@ -739,7 +739,7 @@ def ShowRecent(_target: string): string
 enddef
 # }}}
 
-# 候補ポップアップ {{{
+# 候補をポップアップ {{{
 def PopupKouho()
   CloseKouho->ExecuteWithoutRedraw()
   if !kouho
@@ -781,6 +781,27 @@ enddef
 def CloseKouho()
   MapSelectMode(false)
   ClosePum()
+enddef
+# }}}
+
+# 連鎖補完 {{{
+# 🧪様子見中
+def RegisterToChainJisyo(next_word: string): string
+  if !!last_word && !!next_word
+    chain_jisyo[last_word] = ([next_word] + chain_jisyo->get(last_word, []))->Uniq()
+  endif
+  last_word = next_word
+  end_pos = start_pos + next_word->len()
+  return next_word
+enddef
+
+def ShowChainJisyo(chain: string): string
+  if chain_jisyo->has_key(last_word)
+    kouho = chain_jisyo[last_word]->AddDetail('入力履歴')
+    kouho_index = -1
+    PopupKouho()
+  endif
+  return chain
 enddef
 # }}}
 
@@ -899,27 +920,6 @@ enddef
 export def RefreshJisyo()
   jisyo = {}
   echo '辞書をリフレッシュしました'
-enddef
-# }}}
-
-# 連鎖補完 {{{
-# 🧪様子見中
-def RegisterToChainJisyo(next_word: string): string
-  if !!last_word && !!next_word
-    chain_jisyo[last_word] = ([next_word] + chain_jisyo->get(last_word, []))->Uniq()
-  endif
-  last_word = next_word
-  end_pos = start_pos + next_word->len()
-  return next_word
-enddef
-
-def ShowChainJisyo(chain: string): string
-  if chain_jisyo->has_key(last_word)
-    kouho = chain_jisyo[last_word]->AddDetail('入力履歴')
-    kouho_index = -1
-    PopupKouho()
-  endif
-  return chain
 enddef
 # }}}
 
