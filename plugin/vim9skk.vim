@@ -8,6 +8,7 @@ var default = {
   parens: ['（）', '〔〕', '［］', '｛｝', '〈〉', '《》', '「」', '『』', '【】'],
   marker_midasi: '▽',
   marker_select: '▼',
+  marker_okuri: '*',
   mode_label: {
     off: '_A',
     hira: 'あ',

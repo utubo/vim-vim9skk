@@ -545,7 +545,7 @@ def I(chain: string): string
     prefix = Complete()
   elseif skkmode ==# skkmode_midasi
     GetTarget()
-      ->Split('*')[0]
+      ->Split(g:vim9skk.marker_okuri)[0]
       ->RemoveMarker()
       ->AddStr(chain)
       ->ShowRecent()
@@ -558,7 +558,7 @@ def SetMidasi(key: string = ''): string
   var pos = 0
   if skkmode ==# skkmode_midasi
     if GetTarget() =~# g:vim9skk.marker_midasi
-      return '*' .. key->tolower()
+      return g:vim9skk.marker_okuri .. key->tolower()
     endif
   elseif skkmode ==# skkmode_select
     pos = g:vim9skk.marker_select->len()
@@ -582,7 +582,7 @@ def RemoveMarker(s: string): string
   return s
     ->substitute(g:vim9skk.marker_midasi, '', '')
     ->substitute(g:vim9skk.marker_select, '', '')
-    ->substitute('*', '', '')
+    ->substitute(g:vim9skk.marker_okuri, '', '')
 enddef
 
 def ReplaceTarget(after: string): string
@@ -646,7 +646,7 @@ def GetAllKouho(target: string)
   const [midasi, o] = target
     ->substitute(g:vim9skk.marker_midasi, '', '')
     ->ConvChars(kata_chars, hira_chars)
-    ->Split('*')
+    ->Split(g:vim9skk.marker_okuri)
   okuri = o
   # 候補を検索する
   const okuri_key = okuri_table->get(okuri

@@ -98,6 +98,9 @@ g:vim9skk					*g:vim9skk*
 	marker_select
 		選択モードのマーカーです
 		デフォルト: `▼`
+	marker_okuri
+		送り仮名のマーカーです
+		デフォルト: `*`
 	mode_label
 		現在のモードを表す文字です
 	mode_label_timeout
