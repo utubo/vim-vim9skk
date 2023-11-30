@@ -559,6 +559,9 @@ def SetMidasi(key: string = ''): string
   if skkmode ==# skkmode_midasi
     const target = GetTarget()
     if target->StartsWith(g:vim9skk.marker_midasi)
+      if mode.id ==# mode_abbr
+        return key
+      endif
       # Shift押しっぱなしでもローマ字入力できるように頑張る
       const uppers = target->matchstr('[a-z]*$')
       prefix = "\<BS>"->repeat(uppers->len())
