@@ -562,14 +562,15 @@ def SetMidasi(key: string = ''): string
       if mode.id ==# mode_abbr
         return key
       endif
-      # Shift押しっぱなしでもローマ字入力できるように頑張る
-      const uppers = target->matchstr('[a-z]*$')
-      prefix = "\<BS>"->repeat(uppers->len())
-      # 送り仮名マーカーを設置する
-      if !uppers && target !~# g:vim9skk.marker_okuri
-        prefix ..= g:vim9skk.marker_okuri
+      const sion = target->matchstr('[a-z]*$')
+      if !!sion
+        # Shift押しっぱなしでもローマ字入力できるように頑張る
+        prefix = repeat("\<BS>", sion->len()) .. sion
+      elseif target !~# g:vim9skk.marker_okuri
+        # 送り仮名マーカーを設置する
+        prefix = g:vim9skk.marker_okuri
       endif
-      return prefix .. $'{uppers}{key}'->tolower()
+      return prefix .. key->tolower()
     endif
   elseif skkmode ==# skkmode_select
     pos = g:vim9skk.marker_select->len()
