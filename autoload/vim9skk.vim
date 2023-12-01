@@ -392,9 +392,12 @@ def ToggleMode(m: number): string
     SetMode(mode.id !=# m ? m : mode_hira)
     return ''
   else
+    const k_chars = m ==# mode_kata ? kata_chars : hankaku_chars
+    const mm = GetModeSettings(m)
     const before = GetTarget()->RemoveMarker()
     const after = before
-      ->SwapChars(hira_chars, kata_chars)
+      ->SwapChars(hira_chars, k_chars)
+      ->ConvChars(kata_chars, k_chars)
       ->SwapChars(alphabet_chars, abbr_chars)
     RegisterToRecentJisyo(before, after)
     return after->ReplaceTarget()->ToDirectMode()
@@ -491,13 +494,19 @@ def MapDirectMode()
 enddef
 
 def MapRoman()
-  const map = mode.use_roman ? 'map!' : 'noremap! <nowait>'
   if mode.use_roman
     for k in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
       silent! execute $'unmap! <buffer> <script> {k->tolower()}'
       execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{k}")->feedkeys("it")<CR>'
     endfor
+  else
+    # <nowait>でいけるかな？と思ったけど、ちゃんとunmapしないとテストが通らない
+    for [key, value] in roman_table_items
+      const k = key->EscapeForMap()
+      silent! execute $'unmap! <buffer> <script> {k}'
+    endfor
   endif
+  const map = mode.use_roman ? 'map!' : 'noremap! <nowait>'
   for [key, value] in mode.items
     const k = key->EscapeForMap()
     const v = value->escape('"|\\')
