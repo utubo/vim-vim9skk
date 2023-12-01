@@ -13,17 +13,11 @@ suite.before_each = () => {
   normal! ggdG
 }
 
-def GetLine(): string
-  return mode() ==# 'c' ? getcmdline() : getline('.')
-enddef
-
 def TestOnInsAndCmdline(keys: string, expect: string, msg: string = '')
-  feedkeys($"o{keys}", 'xt')
-  assert.equals(GetLine(), expect, $'insert-mode {msg}')
-  feedkeys("\<Esc>", 'nxt')
-  feedkeys($':{keys}', 'xt')
-  assert.equals(GetLine(), expect, $'cmdline {msg}')
-  feedkeys("\<Esc>", 'nxt')
+  feedkeys($"o{keys}\<Esc>", 'xt')
+  assert.equals(getline('.'), expect, $'insert-mode: {msg}')
+  feedkeys($":vim9 g:a = '{keys}'\<CR>", 'xt')
+  assert.equals(g:a, expect, $'cmdline: {msg}')
 enddef
 
 # モード切り替え等 {{{
@@ -37,23 +31,23 @@ suite.TestHiragana = () => {
 
 suite.TestKatakana = () => {
   TestOnInsAndCmdline(
-    "\<C-j>qaiueokattan\<C-j>\<Esc>",
-    'アイウエオカッタン',
+    "\<C-j>qaiueokattanqa\<C-j>",
+    'アイウエオカッタンあ',
     '全角カナを入力できること'
   )
 }
 
 suite.TestHankaku = () => {
   TestOnInsAndCmdline(
-    "\<C-j>\<C-q>aiueokattan\<C-j>",
-    'ｱｲｳｴｵｶｯﾀﾝ',
+    "\<C-j>\<C-q>aiueokattan\<C-q>a\<C-j>",
+    'ｱｲｳｴｵｶｯﾀﾝあ',
     '半角ｶﾅを入力できること'
   )
 }
 
 suite.TestZenei = () => {
   TestOnInsAndCmdline(
-    "\<C-j>Laiueokattan\<C-j>a\<C-j>\<Esc>",
+    "\<C-j>Laiueokattan\<C-j>a\<C-j>",
     'ａｉｕｅｏｋａｔｔａｎあ',
     '全角英数を入力できること'
   )
@@ -61,7 +55,7 @@ suite.TestZenei = () => {
 
 suite.TestAbbr = () => {
   TestOnInsAndCmdline(
-    "\<C-j>a/smile\<CR>\<C-j>\<Esc>",
+    "\<C-j>a/smile\<CR>\<C-j>",
     'あsmile',
     'abbrモードで半角英数を入力できること'
   )
@@ -69,7 +63,7 @@ suite.TestAbbr = () => {
 
 suite.TestToggleOff = () => {
   TestOnInsAndCmdline(
-    "\<C-j>a\<C-j>a\<Esc>",
+    "\<C-j>a\<C-j>a",
     'あa',
     'vim9skkをオフにできること'
   )
@@ -104,8 +98,8 @@ suite.TestToHankakuFromKatakana = () => {
 # 変換 {{{
 suite.TestHenkan = () => {
   TestOnInsAndCmdline(
-    "\<C-j>Ai\<Space>\<CR>Ai\<Space>\<Space>\<CR>\<C-j>",
-    '愛合',
+    "\<C-j>Ai\<Space>\<CR>Ai\<Space>\<Space>\<CR>Ai\<Space>\<Space>\<CR>\<C-j>",
+    '愛合愛',
     '漢字変換できること'
   )
 }
