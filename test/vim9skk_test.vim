@@ -93,6 +93,10 @@ suite.TestToHankakuFromKatakana = () => {
   )
 }
 
+suite.TestKeepSkkEnableOnInsert = () => {
+  feedkeys($"o\<C-j>on\<Esc>aon\<C-j>\<Esc>aoff\<Esc>", 'xt')
+  assert.equals(getline('.'), 'おんおんoff', 'インサートモードでのSKKの状態を保持すること')
+}
 # }}}
 
 # 変換 {{{
