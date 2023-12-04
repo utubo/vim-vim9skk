@@ -19,7 +19,7 @@ var end_pos = 1
 var henkan_key = ''
 var okuri = ''
 var kouho = []
-var kouho_index = 0
+var kouho_index = -1
 var last_word = ''
 var jisyo = {}
 var recent_jisyo = {}
@@ -431,6 +431,7 @@ def ClosePum()
   if !!pum_winid
     popup_close(pum_winid)
     pum_winid = 0
+    kouho_index = -1
     Redraw()
   endif
 enddef

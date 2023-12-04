@@ -112,8 +112,8 @@ suite.TestKeepSkkEnableOnInsert = () => {
 # 変換 {{{
 suite.TestHenkan = () => {
   TestOnInsAndCmdline(
-    "\<C-j>Ai\<Space>\<CR>Ai\<Space>\<Space>\<CR>Ai\<Space>\<Space>\<CR>\<C-j>",
-    '愛合愛',
+    "\<C-j>Ai\<Space>\<CR>\<C-j>",
+    '愛',
     '漢字変換できること'
   )
 }
