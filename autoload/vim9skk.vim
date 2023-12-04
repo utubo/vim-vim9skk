@@ -521,6 +521,7 @@ def MapMidasiMode()
     MapFunction(g:vim9skk.keymap.select,   'StartSelect()', enable)
     MapFunction(g:vim9skk.keymap.complete, 'Complete()', enable)
     MapFunction(g:vim9skk.keymap.cancel,   'Select(-kouho_index)->Complete()', enable)
+    MapFunction(g:vim9skk.keymap.prefix,   'SetPrefix()', enable)
   endif
 enddef
 
@@ -591,6 +592,10 @@ def SetMidasi(key: string = ''): string
   RegisterToChainJisyo(next_word)
   start_pos = next_start_pos
   return prefix .. g:vim9skk.marker_midasi .. key->tolower()
+enddef
+
+def SetPrefix(): string
+  return 0 < kouho_index ? SetMidasi(g:vim9skk.keymap.prefix) : g:vim9skk.keymap.prefix
 enddef
 # }}}
 

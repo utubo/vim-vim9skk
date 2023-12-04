@@ -125,13 +125,21 @@ suite.TestOkuri = () => {
   )
 }
 
-suite.TestSelctKouho = () => {
+suite.TestSelectKouho = () => {
   # <Space>と<Tab>で次の候補
   # <S-Tab>とxで前の候補
   TestOnInsAndCmdline(
     "\<C-j>Suuzitesuto\<Space>\<Space>\<Tab>\<S-Tab>x\<CR>\<C-j>",
     '1',
     '候補を選択できること'
+  )
+}
+
+suite.TestPrefix = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>Zi>\<Space>Sentaku\<Space>>zi\<CR>\<C-j>",
+    '次選択時',
+    '接頭辞や接尾辞を指定できること'
   )
 }
 # }}}

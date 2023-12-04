@@ -34,6 +34,7 @@ var default = {
     prev: ['<S-Tab>', 'x'],
     complete: '<CR>',
     cancel: '<C-g>',
+    prefix: '>',
   },
 }
 g:vim9skk = get(g:, 'vim9skk', {})

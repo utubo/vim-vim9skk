@@ -147,6 +147,9 @@ g:vim9skk					*g:vim9skk*
 		cancel
 			選択モードのキャンセル
 			一番上の候補(無変換)で確定します
+		prefix
+			接頭辞や接尾辞を指定するためのキーです
+			特殊な要件がないかぎり変更しないでください
 
 	デフォルト
 >
@@ -186,6 +189,7 @@ g:vim9skk					*g:vim9skk*
 			prev: ['<S-Tab>', 'x'],
 			complete: '<CR>',
 			cancel: '<C-g>',
+			prefix: '>',
 		},
 <
 
