@@ -286,6 +286,9 @@ def OnCmdlineEnter()
   else
     ClosePum()
   endif
+  if g:vim9skk_enable
+    ToDirectMode()
+  endif
 enddef
 
 def OnCmdlineLeave()
