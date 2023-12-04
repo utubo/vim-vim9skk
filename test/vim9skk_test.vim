@@ -124,5 +124,15 @@ suite.TestOkuri = () => {
     '送り仮名に対応していること'
   )
 }
+
+suite.TestSelctKouho = () => {
+  # <Space>と<Tab>で次の候補
+  # <S-Tab>とxで前の候補
+  TestOnInsAndCmdline(
+    "\<C-j>Suuzitesuto\<Space>\<Space>\<Tab>\<S-Tab>x\<CR>\<C-j>",
+    '1',
+    '候補を選択できること'
+  )
+}
 # }}}
 
