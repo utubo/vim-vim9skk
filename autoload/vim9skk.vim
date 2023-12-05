@@ -418,16 +418,19 @@ enddef
 
 def ShowMode(popup_even_off: bool)
   g:vim9skk_mode = g:vim9skk_enable ? mode.label : g:vim9skk.mode_label.off
-  ClosePum()
   if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || g:vim9skk_enable)
     # マーカーを削除することで位置がズレるのでtimerで誤魔化す
     timer_start(1, (t: number) => {
+      ClosePum()
       pum_winid = popup_create(g:vim9skk_mode, {
         col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
         line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
         time: g:vim9skk.mode_label_timeout, })
       Redraw()
     })
+  else
+    ClosePum()
+    Redraw()
   endif
 enddef
 
