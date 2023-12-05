@@ -379,7 +379,10 @@ enddef
 def ToDirectMode(chain: string = '', delta: number = 0): string
   SetSkkMode(skkmode_direct)
   start_pos = GetPos() - delta
-  CloseKouho()
+  # マーカーを削除することで位置がズレるのでtimerでごまかす
+  timer_start(1, (t: number) => {
+    ShowMode(true)
+  })
   return chain
 enddef
 

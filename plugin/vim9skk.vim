@@ -35,6 +35,7 @@ var default = {
     complete: '<CR>',
     cancel: '<C-g>',
     prefix: '>',
+    insert_leave: '<Esc>',
   },
 }
 g:vim9skk = get(g:, 'vim9skk', {})
