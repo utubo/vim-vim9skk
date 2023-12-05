@@ -742,14 +742,21 @@ def Complete(chain: string = ''): string
   kouho = []
   henkan_key = ''
   TurnOffAbbr()
-  ShowMode(true)
   return chain ..
     after
       ->RegisterToChainJisyo()
       ->AddLeftForParen()
       ->ReplaceTarget()
       ->ToDirectMode(delta)
-      ->ShowChainJisyo()
+      ->AfterComplete()
+enddef
+
+def AfterComplete(chain: string): string
+  ShowChainJisyo()
+  if !kouho
+    ShowMode(true)
+  endif
+  return chain
 enddef
 # }}}
 
@@ -841,13 +848,12 @@ def RegisterToChainJisyo(next_word: string): string
   return next_word
 enddef
 
-def ShowChainJisyo(chain: string): string
+def ShowChainJisyo()
   if chain_jisyo->has_key(last_word)
     kouho = chain_jisyo[last_word]->AddDetail('入力履歴')
     kouho_index = -1
     PopupKouho()
   endif
-  return chain
 enddef
 # }}}
 
