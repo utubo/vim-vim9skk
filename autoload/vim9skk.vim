@@ -112,6 +112,7 @@ const abbr_chars = ('0123456789' ..
 
 # ユーティリティー {{{
 # tr()を使いたいけど、半角カナ濁点半濁点に対応しないといけないので自作
+# 半角カナ→ひらがなorカタカナはNG
 def ConvChars(str: string, from_chars: list<string>, to_chars: list<string>): string
   var dest = []
   for c in str->split('.\zs')
