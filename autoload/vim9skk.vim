@@ -633,8 +633,8 @@ def StartSelect(): string
     return ''
   endif
   SetSkkMode(skkmode_select)
-  kouho_index = 0
   PopupKouho()
+  kouho_index = 0
   return Select(1)
 enddef
 
