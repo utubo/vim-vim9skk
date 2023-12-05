@@ -195,9 +195,11 @@ def Init()
     autocmd CmdlineLeave * OnCmdlineLeave()
     autocmd VimLeave * SaveRecentJisyo()
   augroup END
+  # 送り仮名テーブルを作成
   for [k, v] in roman_table_items
     okuri_table[v->strcharpart(0, 1)] = k[0]
   endfor
+  # 辞書をフルパスにする
   var expanded = []
   for j in g:vim9skk.jisyo
     const [path, enc] = ToFullPathAndEncode(j)
@@ -206,6 +208,7 @@ def Init()
     endfor
   endfor
   g:vim9skk.jisyo = expanded
+  # その他初期化処理
   SetMode(mode_hira)
   initialized = true
 enddef
@@ -677,18 +680,18 @@ def GetAllKouho(target: string)
     return
   endif
   # `▽ほげ*ふが`を見出しと送り仮名に分割する
-  const [midasi, o] = target
+  const [m, o] = target
     ->substitute(g:vim9skk.marker_midasi, '', '')
-    ->ConvChars(kata_chars, hira_chars)
     ->Split(g:vim9skk.marker_okuri)
-  okuri = o
+  kouho = [m] # 候補一つ目は無変換
+  okuri = o # 送り仮名は選択時に使うのでスクリプトローカルに保存
   # 候補を検索する
-  const okuri_key = okuri_table->get(okuri
+  const midasi_key = m->ConvChars(kata_chars, hira_chars)
+  const okuri_key = okuri_table->get(o->ConvChars(kata_chars, hira_chars)
     ->substitute('^っ*', '', '')
     ->matchstr('^.'), ''
   )
-  henkan_key = $'{midasi}{okuri_key}' # `ほげf`
-  kouho = [midasi]
+  henkan_key = $'{midasi_key}{okuri_key}' # `ほげf`
   for path in [g:vim9skk.jisyo_recent, g:vim9skk.jisyo_user] + g:vim9skk.jisyo
     kouho += GetKouhoFromJisyo(path, henkan_key)
   endfor

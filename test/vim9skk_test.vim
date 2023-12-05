@@ -3,21 +3,20 @@ vim9script
 var suite = themis#suite('Test for .vimrc')
 const assert = themis#helper('assert')
 
-# 変換履歴ファイル
-const tmp = tempname()
-suite.before = () => {
-  writefile([''], tmp)
-}
-suite.after = () => {
-  silent! delete(tmp)
-}
-
+# テスト共通処理 {{{
+const jisyo_recent = tempname()
 g:vim9skk = {
   jisyo: [expand('<sfile>:p:h') .. '/SKK-JISYO.test'],
-  jisyo_recent: tmp
+  jisyo_recent: jisyo_recent }
+execute 'source' expand('<sfile>:p:h:h') .. '/plugin/vim9skk.vim'
+
+suite.before = () => {
+  writefile([''], jisyo_recent)
 }
 
-execute 'source' expand('<sfile>:p:h:h') .. '/plugin/vim9skk.vim'
+suite.after = () => {
+  silent! delete(jisyo_recent)
+}
 
 suite.before_each = () => {
   normal! ggdG
@@ -29,6 +28,7 @@ def TestOnInsAndCmdline(keys: string, expect: string, msg: string = '')
   feedkeys($":vim9 g:a = '{keys}'\<CR>", 'xt')
   assert.equals(g:a, expect, $'cmdline: {msg}')
 enddef
+#}}}
 
 # モード切り替え等 {{{
 suite.TestHiragana = () => {
@@ -150,6 +150,22 @@ suite.TestPrefix = () => {
     "\<C-j>Zi>\<Space>Sentaku\<Space>>zi\<Space>\<CR>\<C-j>",
     '次選択時',
     '接頭辞や接尾辞を指定できること'
+  )
+}
+
+suite.TestMuhenkan = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>qAi\<Space>x\<CR>\<C-j>",
+    'アイ',
+    '一つ目の候補は無変換であること'
+  )
+}
+
+suite.TestRenzoku = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>Kanji\<Space>Henkan\<Space>\<CR>\<C-j>",
+    '漢字変換',
+    '連続変換できること'
   )
 }
 # }}}
