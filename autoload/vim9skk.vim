@@ -276,7 +276,7 @@ def OnInsertLeave()
     ''
   ))
   ToDirectMode()
-  ToggleAbbr(false)
+  TurnOffAbbr()
   RegisterToChainJisyo(after)
 enddef
 
@@ -409,13 +409,19 @@ def ToggleMode(m: number): string
   endif
 enddef
 
-def ToggleAbbr(enable: bool = true): string
-  if mode.id ==# mode_abbr || !enable
+def ToggleAbbr(): string
+  if mode.id ==# mode_abbr
     SetMode(mode_hira)
     return ''
   else
     SetMode(mode_abbr)
     return SetMidasi()
+  endif
+enddef
+
+def TurnOffAbbr()
+  if mode.id ==# mode_abbr
+    SetMode(mode_hira)
   endif
 enddef
 
@@ -734,7 +740,8 @@ def Complete(chain: string = ''): string
   RegisterToRecentJisyo(henkan_key, k)
   kouho = []
   henkan_key = ''
-  ToggleAbbr(false)
+  TurnOffAbbr()
+  ShowMode(true)
   return chain ..
     after
       ->RegisterToChainJisyo()

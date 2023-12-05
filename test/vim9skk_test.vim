@@ -153,19 +153,29 @@ suite.TestPrefix = () => {
   )
 }
 
-suite.TestMuhenkan = () => {
-  TestOnInsAndCmdline(
-    "\<C-j>qAi\<Space>x\<CR>\<C-j>",
-    'アイ',
-    '一つ目の候補は無変換であること'
-  )
-}
-
 suite.TestRenzoku = () => {
   TestOnInsAndCmdline(
     "\<C-j>Kanji\<Space>Henkan\<Space>\<CR>\<C-j>",
     '漢字変換',
-    '連続変換できること'
+    '選択モードから見出しモードに遷移できること'
+  )
+}
+
+suite.TestKeepKatakana = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>qKanji\<Space>\<CR>aq\<C-j>",
+    '漢字ア',
+    'カタカナで変換したあともカタカナをキープすること'
+  )
+}
+# }}}
+
+# vim9skk {{{
+suite.TestMuhenkan = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>Ai\<Space>x\<CR>qAi\<Space>x\<CR>q\<C-j>",
+    'あいアイ',
+    '一つ目の候補は無変換であること'
   )
 }
 # }}}
