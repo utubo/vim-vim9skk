@@ -178,5 +178,13 @@ suite.TestMuhenkan = () => {
     '一つ目の候補は無変換であること'
   )
 }
+
+suite.TestAutoKatakana = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>Fantazi-\<Space>\<CR>\<C-j>",
+    'ファンタジー',
+    '未登録の外来語をカタカナに変換できること'
+  )
+}
 # }}}
 

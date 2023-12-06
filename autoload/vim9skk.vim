@@ -703,6 +703,10 @@ def GetAllKouho(target: string)
   for path in [g:vim9skk.jisyo_recent, g:vim9skk.jisyo_user] + g:vim9skk.jisyo
     kouho += GetKouhoFromJisyo(path, henkan_key)
   endfor
+  if len(kouho) ==# 1 && m =~# '[ゔーぱぴぷぺぽ]'
+    kouho += [m->ConvChars(hira_chars, kata_chars)]
+    kouho = kouho->Uniq()
+  endif
   if len(kouho) ==# 1
     kouho = RegisterToUserJisyo(henkan_key)
   endif
