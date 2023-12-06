@@ -841,7 +841,7 @@ enddef
 # 🧪様子見中
 def RegisterToChainJisyo(next_word: string): string
   if !!last_word && !!next_word
-    chain_jisyo[last_word] = ([next_word] + chain_jisyo->get(last_word, []))->Uniq()
+    chain_jisyo[last_word] = chain_jisyo->get(last_word, [])->insert(next_word)->Uniq()
   endif
   last_word = next_word
   end_pos = start_pos + next_word->len()
@@ -952,19 +952,22 @@ def RegisterToRecentJisyo(before: string, after: string)
     return
   endif
   # 新規に追加する行
-  var afters = [after] + GetKouhoFromJisyo(g:vim9skk.jisyo_recent, before)
+  var afters = GetKouhoFromJisyo(g:vim9skk.jisyo_recent, before)->insert(after)
   const newline = $'{before} /{afters->Uniq()->join("/")}/'
   # 既存の行を削除してから先頭に追加する
   var j = ReadRecentJisyo()
   const head = $'{before} '->IconvTo(j.enc)
-  j.lines->filter((_, v) => !v->StartsWith(head))
-  j.lines = [newline->IconvTo(j.enc)] + j.lines[: g:vim9skk.recent]
+  j.lines
+    ->filter((_, v) => !v->StartsWith(head))
+    ->slice(0, g:vim9skk.recent)
+    ->insert(newline->IconvTo(j.enc))
+  # 候補探索用の辞書にはソート済のものをセットする
   jisyo[g:vim9skk.jisyo_recent] = { lines: j.lines->copy()->sort(), enc: j.enc }
 enddef
 
 def SaveRecentJisyo()
   var j = ReadRecentJisyo()
-  if !!j && !!j.lines
+  if !!j.lines
     WriteJisyo(j.lines, g:vim9skk.jisyo_recent)
   endif
 enddef
