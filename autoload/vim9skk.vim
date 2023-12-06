@@ -25,28 +25,29 @@ var jisyo = {}
 var recent_jisyo = {}
 var chain_jisyo = {}
 var pum_winid = 0
+var is_registering_user_jisyo = false
 
 const roman_table = {
   # 4文字
   ltsu: 'っ', xtsu: 'っ',
   # 3文字
-  gya: 'ぎゃ', gyu: 'ぎゅ', gye: 'ぎぇ', gyo: 'ぎょ',
-  zya: 'じゃ', zyu: 'じゅ', zye: 'じぇ', zyo: 'じょ',
-  dya: 'ぢゃ', dyu: 'ぢゅ', dye: 'ぢぇ', dyo: 'ぢょ',
-  dha: 'ぢゃ', dhu: 'ぢゅ', dhe: 'ぢぇ', dho: 'ぢょ',
-  bya: 'びゃ', byu: 'びゅ', bye: 'びぇ', byo: 'びょ',
-  pya: 'ぴゃ', pyu: 'ぴゅ', pye: 'ぴぇ', pyo: 'ぴょ',
-  kya: 'きゃ', kyu: 'きゅ', kye: 'きぇ', kyo: 'きょ',
-  sya: 'しゃ', syu: 'しゅ', sye: 'しぇ', syo: 'しょ',
+  gya: 'ぎゃ', gyi: 'ぎぃ', gyu: 'ぎゅ', gye: 'ぎぇ', gyo: 'ぎょ',
+  zya: 'じゃ', zyi: 'じぃ', zyu: 'じゅ', zye: 'じぇ', zyo: 'じょ',
+  dya: 'ぢゃ', dyi: 'でぃ', dyu: 'ぢゅ', dye: 'ぢぇ', dyo: 'ぢょ',
+  dha: 'ぢゃ', dhi: 'でぃ', dhu: 'ぢゅ', dhe: 'ぢぇ', dho: 'ぢょ',
+  bya: 'びゃ', byi: 'びぃ', byu: 'びゅ', bye: 'びぇ', byo: 'びょ',
+  pya: 'ぴゃ', pyi: 'ぴぃ', pyu: 'ぴゅ', pye: 'ぴぇ', pyo: 'ぴょ',
+  kya: 'きゃ', kyi: 'きぃ', kyu: 'きゅ', kye: 'きぇ', kyo: 'きょ',
+  sya: 'しゃ', syi: 'しぃ', syu: 'しゅ', sye: 'しぇ', syo: 'しょ',
   sha: 'しゃ', shi: 'し',   shu: 'しゅ', she: 'しぇ', sho: 'しょ',
-  tya: 'ちゃ', tyu: 'ちゅ', tye: 'ちぇ', tyo: 'ちょ',
-  cha: 'ちゃ', chi: 'ち',   chu: 'ちゅ', che: 'ちぇ', cho: 'ちょ',
+  tya: 'ちゃ', tyi: 'ち',   tyu: 'ちゅ', tye: 'ちぇ', tyo: 'ちょ',
+  cha: 'ちゃ', chi: 'ちぃ', chu: 'ちゅ', che: 'ちぇ', cho: 'ちょ',
   tsa: 'つぁ', tsi: 'つぃ', tsu: 'つ',   tse: 'つぇ', tso: 'つぉ',
   tha: 'てゃ', thi: 'てぃ', thu: 'てゅ', the: 'てぇ', tho: 'てょ',
-  nya: 'にゃ', nyu: 'にゅ', nye: 'にぇ', nyo: 'にょ',
-  hya: 'ひゃ', hyu: 'ひゅ', hye: 'ひぇ', hyo: 'ひょ',
-  mya: 'みゃ', myu: 'みゅ', mye: 'みぇ', myo: 'みょ',
-  rya: 'りゃ', ryu: 'りゅ', rye: 'りぇ', ryo: 'りょ',
+  nya: 'にゃ', nyi: 'にぃ', nyu: 'にゅ', nye: 'にぇ', nyo: 'にょ',
+  hya: 'ひゃ', hyi: 'ひぃ', hyu: 'ひゅ', hye: 'ひぇ', hyo: 'ひょ',
+  mya: 'みゃ', myi: 'みぃ', myu: 'みゅ', mye: 'みぇ', myo: 'みょ',
+  rya: 'りゃ', ryi: 'りぃ', ryu: 'りゅ', rye: 'りぇ', ryo: 'りょ',
   lya: 'ゃ', lyu: 'ゅ', lyo: 'ょ', ltu: 'っ', lwa: 'ゎ',
   xya: 'ゃ', xyu: 'ゅ', xyo: 'ょ', xtu: 'っ', xwa: 'ゎ',
   # 2文字
@@ -902,6 +903,10 @@ def WriteJisyo(lines: list<string>, path: string, flags: string = '')
 enddef
 
 export def RegisterToUserJisyo(key: string): list<string>
+  if is_registering_user_jisyo
+    return []
+  endif
+  is_registering_user_jisyo = true
   const save = {
     mode_id: mode.id,
     skkmode: skkmode,
@@ -931,6 +936,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     start_pos = save.start_pos
     end_pos = save.end_pos
     okuri = save.okuri
+    is_registering_user_jisyo = false
   endtry
   return result
 enddef
