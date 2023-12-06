@@ -951,8 +951,7 @@ def ReadRecentJisyo(): dict<any>
     if !filereadable(p)
       return { lines: [], enc: enc }
     endif
-    var lines = readfile(p)
-    recent_jisyo = { lines: lines, enc: enc }
+    recent_jisyo = { lines: readfile(p), enc: enc }
   endif
   return recent_jisyo
 enddef
@@ -967,7 +966,7 @@ def RegisterToRecentJisyo(before: string, after: string)
   # 既存の行を削除してから先頭に追加する
   var j = ReadRecentJisyo()
   const head = $'{before} '->IconvTo(j.enc)
-  j.lines
+  j.lines = j.lines # 再代入しないとだめ？？
     ->filter((_, v) => !v->StartsWith(head))
     ->slice(0, g:vim9skk.recent)
     ->insert(newline->IconvTo(j.enc))
