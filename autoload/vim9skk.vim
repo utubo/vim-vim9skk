@@ -118,8 +118,8 @@ const abbr_chars = ('0123456789' ..
 def ConvChars(str: string, from_chars: list<string>, to_chars: list<string>): string
   var dest = []
   for c in str->split('.\zs')
-    const p = from_chars->index(c)
-    dest += [p ==# - 1 ? c : to_chars[p]]
+    const i = from_chars->index(c)
+    dest += [i ==# - 1 ? c : to_chars[i]]
   endfor
   return dest->join('')
 enddef
@@ -202,7 +202,7 @@ def Init()
   for [k, v] in roman_table_items
     okuri_table[v->strcharpart(0, 1)] = k[0]
   endfor
-  # 辞書をフルパスにする
+  # 辞書のパスのワイルドカードを展開しておく
   var expanded = []
   for j in g:vim9skk.jisyo
     const [path, enc] = ToFullPathAndEncode(j)
@@ -298,9 +298,9 @@ def OnCmdlineEnter()
 enddef
 
 def OnCmdlineLeave()
-  CloseKouho()
-  if g:vim9skk_enable && mode.id ==# mode_abbr
-    SetMode(mode_hira)
+  if g:vim9skk_enable
+    CloseKouho()
+    TurnOffAbbr()
   endif
 enddef
 # }}}
@@ -376,9 +376,8 @@ def SetMode(m: number)
   mode = GetModeSettings(m)
   MapDirectMode()
   if skkmode !=# skkmode_select
-    CloseKouho()
+    ShowMode(true)
   endif
-  ShowMode(true)
   silent! doautocmd User Vim9skkModeChanged
 enddef
 
@@ -511,6 +510,8 @@ def MapDirectMode()
   MapFunction(g:vim9skk.keymap.alphabet, 'ToggleMode(mode_alphabet)')
   MapFunction(g:vim9skk.keymap.abbr,     'ToggleAbbr()')
   MapFunction(g:vim9skk.keymap.midasi,   'SetMidasi()')
+  # leximaなどがinsertモードを解除してしまうので…
+  noremap! <buffer> <script> <BS> <BS>
 enddef
 
 def MapRoman()
@@ -595,7 +596,7 @@ def U(key: string): string
   if skkmode ==# skkmode_direct || !target->StartsWith(g:vim9skk.marker_midasi)
     return SetMidasi(key)
   endif
-  # 見出しモードなら送り仮名をつける
+  # 見出しモードなら…
   var prefix = ''
   const sion = target->matchstr('[a-z]*$')
   if !!sion
@@ -700,29 +701,29 @@ def GetAllKouho(target: string)
     ->substitute(g:vim9skk.marker_midasi, '', '')
     ->Split(g:vim9skk.marker_okuri)
   kouho = [m] # 候補一つ目は無変換
-  okuri = o # 送り仮名は選択時に使うのでスクリプトローカルに保存
+  okuri = o # 送り仮名は候補選択時に使うのでスクリプトローカルに保持しておく
   # 候補を検索する
   const midasi_key = m->ConvChars(kata_chars, hira_chars)
-  const okuri_key = okuri_table->get(o->ConvChars(kata_chars, hira_chars)
+  const okuri_key = o
+    ->ConvChars(kata_chars, hira_chars)
     ->substitute('^っ*', '', '')
-    ->matchstr('^.'), ''
-  )
-  henkan_key = $'{midasi_key}{okuri_key}' # `ほげf`
+    ->matchstr('^.')
+  henkan_key = $'{midasi_key}{okuri_table->get(okuri_key, '')}' # `ほげf`
   for path in [g:vim9skk.jisyo_recent, g:vim9skk.jisyo_user] + g:vim9skk.jisyo
     kouho += GetKouhoFromJisyo(path, henkan_key)
   endfor
-  if len(kouho) ==# 1 && m =~# '[ゔーぱぴぷぺぽ]'
-    kouho += [m->ConvChars(hira_chars, kata_chars)]
-    kouho = kouho->Uniq()
-  endif
-  if len(kouho) ==# 1
-    kouho = RegisterToUserJisyo(henkan_key)
-  endif
   kouho = kouho->Uniq()
+  if len(kouho) ==# 1
+    if m =~# '[ゔーぱぴぷぺぽ]'
+      kouho += [m->ConvChars(hira_chars, kata_chars)]
+    else
+      kouho = RegisterToUserJisyo(henkan_key)
+    endif
+  endif
 enddef
 
 def Cyclic(a: number, max: number): number
-  return max ==# 0 ? 0 : ((a + max) % max)
+  return max ==# 0 ? 0 : ((a % max + max) % max)
 enddef
 
 def GetSelectedKouho(): string
@@ -732,10 +733,8 @@ enddef
 def Select(d: number): string
   SetSkkMode(skkmode_select)
   kouho_index = Cyclic(kouho_index + d, len(kouho))
-  const k = GetSelectedKouho()
-  const after = g:vim9skk.marker_select .. k .. okuri
   HighlightKouho()
-  return ReplaceTarget(after)
+  return ReplaceTarget($'{g:vim9skk.marker_select}{GetSelectedKouho()}{okuri}')
 enddef
 
 def AddLeftForParen(p: string): string
@@ -750,16 +749,15 @@ def Complete(chain: string = ''): string
   const before = GetTarget()
   const after = before->RemoveMarker()
   pos_delta = before->len() - after->len()
-  const k = GetSelectedKouho()
-  RegisterToRecentJisyo(henkan_key, k)
+  RegisterToRecentJisyo(henkan_key, GetSelectedKouho())
+  RegisterToChainJisyo(after)
+  TurnOffAbbr()
   kouho = []
   henkan_key = ''
-  TurnOffAbbr()
   return chain ..
     after
-      ->RegisterToChainJisyo()
-      ->AddLeftForParen()
       ->ReplaceTarget()
+      ->AddLeftForParen()
       ->ToDirectMode(pos_delta)
       ->AfterComplete()
 enddef
@@ -782,8 +780,7 @@ def AddDetail(list: list<string>, detail: string): list<string>
   return result
 enddef
 
-def ShowRecent(_target: string): string
-  var target = _target
+def ShowRecent(target: string)
   kouho = []
   const j = ReadRecentJisyo()
   const head = target->IconvTo(j.enc)
@@ -792,15 +789,14 @@ def ShowRecent(_target: string): string
       kouho += line->IconvFrom(j.enc)->Split(' ')[1]->split('/')
     endif
   endfor
-  if 1 < len(kouho)
+  if !len(kouho)
+    CloseKouho()
+  else
     kouho = kouho->Uniq()->AddDetail('変換履歴')
     kouho_index = -1
     okuri = ''
     PopupKouho()
-  else
-    CloseKouho()
   endif
-  return ''
 enddef
 # }}}
 
@@ -814,7 +810,7 @@ def PopupKouho()
   MapSelectMode(true)
   if g:vim9skk.popup_maxheight <= 0
     return
-    endif
+  endif
   var pum_options = {
     col: 'cursor',
     line: 'cursor-1',
@@ -830,7 +826,7 @@ def PopupKouho()
     pum_options.pos = 'topright'
   endif
   pum_winid = popup_create(kouho, pum_options)
-  silent! win_execute(pum_winid, ':%s/;/\t/g')
+  win_execute(pum_winid, ':%s/;/\t/g', 'silent!')
   win_execute(pum_winid, 'setlocal tabstop=12')
   win_execute(pum_winid, 'syntax match PMenuExtra /\t.*/')
   HighlightKouho()
@@ -852,13 +848,12 @@ enddef
 
 # 連鎖補完 {{{
 # 🧪様子見中
-def RegisterToChainJisyo(next_word: string): string
+def RegisterToChainJisyo(next_word: string)
   if !!last_word && !!next_word
     chain_jisyo[last_word] = chain_jisyo->get(last_word, [])->insert(next_word)->Uniq()
   endif
   last_word = next_word
   end_pos = start_pos + next_word->len()
-  return next_word
 enddef
 
 def ShowChainJisyo()
@@ -877,17 +872,11 @@ def ToFullPathAndEncode(path: string): list<string>
 enddef
 
 def IconvTo(str: string, enc: string): string
-  if !str || !enc || enc ==# &enc
-    return str
-  endif
-  return str->iconv(&enc, enc)
+  return (!str || !enc || enc ==# &enc) ? str : str->iconv(&enc, enc)
 enddef
 
 def IconvFrom(str: string, enc: string): string
-  if !str || !enc || enc ==# &enc
-    return str
-  endif
-  return str->iconv(enc, &enc)
+  return (!str || !enc || enc ==# &enc) ? str : str->iconv(enc, &enc)
 enddef
 
 def ReadJisyo(path: string): dict<any>
@@ -900,12 +889,9 @@ def ReadJisyo(path: string): dict<any>
   if !filereadable(p)
     return { lines: [], enc: enc }
   endif
-  # iconvはWindowsですごく重いので、
+  # iconvはWindowsですごく重いので、読み込み時には全体を変換しない
   # 検索時に検索対象の方の文字コードを辞書にあわせる
-  # var lines = readfile(p)->IconvFrom配列対応版(enc)
-  var lines = readfile(p)
-  lines->sort()
-  jisyo[path] = { lines: lines, enc: enc }
+  jisyo[path] = { lines: readfile(p)->sort(), enc: enc }
   return jisyo[path]
 enddef
 
@@ -935,12 +921,12 @@ export def RegisterToUserJisyo(key: string): list<string>
       echo 'キャンセルしました'
     else
       # ユーザー辞書に登録する
-      const newline = $'{key} /{value}/'
       const j = ReadJisyo(g:vim9skk.jisyo_user)
+      const newline = $'{key} /{value}/'
       jisyo[g:vim9skk.jisyo_user].lines += [newline->IconvTo(j.enc)]
-      WriteJisyo([newline], expand(g:vim9skk.jisyo_user), 'a')
-      echo '登録しました'
+      [newline]->WriteJisyo(g:vim9skk.jisyo_user, 'a')
       result += [value]
+      echo '登録しました'
     endif
   finally
     SetMode(save.mode_id)
@@ -969,8 +955,11 @@ def RegisterToRecentJisyo(before: string, after: string)
     return
   endif
   # 新規に追加する行
-  var afters = GetKouhoFromJisyo(g:vim9skk.jisyo_recent, before)->insert(after)
-  const newline = $'{before} /{afters->Uniq()->join("/")}/'
+  const afters = GetKouhoFromJisyo(g:vim9skk.jisyo_recent, before)
+    ->insert(after)
+    ->Uniq()
+    ->join('/')
+  const newline = $'{before} /{afters}/'
   # 既存の行を削除してから先頭に追加する
   var j = ReadRecentJisyo()
   const head = $'{before} '->IconvTo(j.enc)
@@ -983,9 +972,9 @@ def RegisterToRecentJisyo(before: string, after: string)
 enddef
 
 def SaveRecentJisyo()
-  var j = ReadRecentJisyo()
-  if !!j.lines
-    WriteJisyo(j.lines, g:vim9skk.jisyo_recent)
+  var lines = ReadRecentJisyo().lines
+  if !!lines
+    lines->WriteJisyo(g:vim9skk.jisyo_recent)
   endif
 enddef
 
