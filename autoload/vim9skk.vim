@@ -16,6 +16,7 @@ var mode = { id: mode_hira, use_roman: true, items: [] }
 var skkmode = skkmode_direct
 var start_pos = 0
 var end_pos = 1
+var pos_delta = 0 # 確定前後のカーソル位置の差異
 var henkan_key = ''
 var okuri = ''
 var kouho = []
@@ -516,7 +517,7 @@ def MapRoman()
   if mode.use_roman
     for k in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
       silent! execute $'unmap! <buffer> <script> {k->tolower()}'
-      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>SetMidasi("{k}")->feedkeys("it")<CR>'
+      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>U("{k}")->feedkeys("it")<CR>'
     endfor
   else
     # <nowait>でいけるかな？と思ったけど、ちゃんとunmapしないとテストが通らない
@@ -530,7 +531,7 @@ def MapRoman()
     const k = key->EscapeForMap()
     const v = value->escape('"|\\')
     const flg = mode.use_roman && value =~# '[a-z]$' ? 'it' : 'nit'
-    execute $'{map} <buffer> <script> {k} <ScriptCmd>I("{v}")->feedkeys("{flg}")<CR>'
+    execute $'{map} <buffer> <script> {k} <ScriptCmd>L("{v}")->feedkeys("{flg}")<CR>'
   endfor
 enddef
 
@@ -568,7 +569,8 @@ def UnmapAll()
   b:vim9skk_saved_keymap = []
 enddef
 
-def I(chain: string): string
+# 小文字入力時(Lower)
+def L(chain: string): string
   var prefix = ''
   if skkmode ==# skkmode_select
     prefix = Complete()
@@ -582,39 +584,45 @@ def I(chain: string): string
   return prefix .. chain
 enddef
 
-def SetMidasi(key: string = ''): string
-  var prefix = ''
-  var pos = 0
-  if skkmode ==# skkmode_midasi
-    const target = GetTarget()
-    if target->StartsWith(g:vim9skk.marker_midasi)
-      if mode.id ==# mode_abbr
-        return key
-      endif
-      const sion = target->matchstr('[a-z]*$')
-      if !!sion
-        # Shift押しっぱなしでもローマ字入力できるように頑張る
-        prefix = repeat("\<BS>", sion->len()) .. sion
-      elseif target !~# g:vim9skk.marker_okuri
-        # 送り仮名マーカーを設置する
-        prefix = g:vim9skk.marker_okuri
-      endif
-      return prefix .. key->tolower()
-    endif
-  elseif skkmode ==# skkmode_select
-    pos = g:vim9skk.marker_select->len()
-    prefix = Complete()
+# 大文字入力時(Upper)
+def U(key: string): string
+  # 選択モードなら確定して見出しをセットする
+  if skkmode ==# skkmode_select
+    return Complete() .. key
   endif
+  const target = GetTarget()
+  # 見出しマークがなければ見出しモードへ遷移する
+  if skkmode ==# skkmode_direct || !target->StartsWith(g:vim9skk.marker_midasi)
+    return SetMidasi(key)
+  endif
+  # 見出しモードなら送り仮名をつける
+  var prefix = ''
+  const sion = target->matchstr('[a-z]*$')
+  if !!sion
+    # Shift押しっぱなしでもローマ字入力できるように頑張る
+    prefix = repeat("\<BS>", sion->len()) .. sion
+  elseif target !~# g:vim9skk.marker_okuri
+    # 送り仮名マーカーを設置する
+    prefix = g:vim9skk.marker_okuri
+  endif
+  return prefix .. key->tolower()
+enddef
+
+def SetMidasi(key: string = '', delta: number = 0): string
   SetSkkMode(skkmode_midasi)
-  const next_start_pos = max([0, GetPos() - pos])
+  const next_start_pos = GetPos() - delta
   const next_word = GetLine()->matchstr($'\%{end_pos}c.*\%{next_start_pos}c')
   RegisterToChainJisyo(next_word)
   start_pos = next_start_pos
-  return prefix .. g:vim9skk.marker_midasi .. key->tolower()
+  return g:vim9skk.marker_midasi .. key->tolower()
 enddef
 
 def SetPrefix(): string
-  return 0 < kouho_index ? SetMidasi(g:vim9skk.keymap.prefix) : g:vim9skk.keymap.prefix
+  if skkmode ==# skkmode_select
+    return Complete() .. SetMidasi(g:vim9skk.keymap.prefix, pos_delta)
+  else
+    return g:vim9skk.keymap.prefix
+  endif
 enddef
 # }}}
 
@@ -741,7 +749,7 @@ enddef
 def Complete(chain: string = ''): string
   const before = GetTarget()
   const after = before->RemoveMarker()
-  const delta = before->len() - after->len()
+  pos_delta = before->len() - after->len()
   const k = GetSelectedKouho()
   RegisterToRecentJisyo(henkan_key, k)
   kouho = []
@@ -752,7 +760,7 @@ def Complete(chain: string = ''): string
       ->RegisterToChainJisyo()
       ->AddLeftForParen()
       ->ReplaceTarget()
-      ->ToDirectMode(delta)
+      ->ToDirectMode(pos_delta)
       ->AfterComplete()
 enddef
 
