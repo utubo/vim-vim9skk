@@ -737,11 +737,11 @@ def Select(d: number): string
   return ReplaceTarget($'{g:vim9skk.marker_select}{GetSelectedKouho()}{okuri}')
 enddef
 
-def AddLeftForParen(p: string): string
+def AddLeftForParen(chain: string, p: string): string
   if g:vim9skk.parens->Includes(p)
-    return p .. "\<Left>"
+    return chain .. "\<C-g>U\<Left>"
   else
-    return p
+    return chain
   endif
 enddef
 
@@ -757,7 +757,7 @@ def Complete(chain: string = ''): string
   return chain ..
     after
       ->ReplaceTarget()
-      ->AddLeftForParen()
+      ->AddLeftForParen(after)
       ->ToDirectMode(pos_delta)
       ->AfterComplete()
 enddef
