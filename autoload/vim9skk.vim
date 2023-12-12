@@ -185,6 +185,12 @@ def ForEach(a: list<any>, F: func)
     endif
   endfor
 enddef
+
+def DoUserEvent(event: string)
+  if exists($'#User#{event}')
+    execute $'doautocmd User {event}'
+  endif
+enddef
 # }}}
 
 # 基本 {{{
@@ -227,8 +233,8 @@ export def Enable()
   MapToBuf()
   ToDirectMode()
   ShowMode(true)
-  silent! doautocmd User Vim9skkModeChanged
-  silent! doautocmd User Vim9skkEnabled
+  DoUserEvent('Vim9skkModeChanged')
+  DoUserEvent('Vim9skkEnter')
 enddef
 
 export def Disable(popup_even_off: bool = true)
@@ -245,8 +251,8 @@ export def Disable(popup_even_off: bool = true)
   UnmapAll()
   CloseKouho()
   ShowMode(popup_even_off)
-  silent! doautocmd User Vim9skkModeChanged
-  silent! doautocmd User Vim9skkDisbaled
+  DoUserEvent('Vim9skkModeChanged')
+  DoUserEvent('Vim9skkLeave')
 enddef
 
 export def ToggleSkk()

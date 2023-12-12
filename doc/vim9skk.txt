@@ -209,13 +209,13 @@ COMMANDS					*vim9skk-commands*
 ------------------------------------------------------------------------------
 EVENTS						*vim9skk-events*
 
-:Vim9Enabled					*:Vim9skkEnabled*
+:Vim9skkEnter					*:Vim9skkEnter*
 	`g:vim9skk_mode`が有効になったときに発火します
 
-:Vim9Disabled					*:Vim9skkDisabled*
+:Vim9skkLever					*:Vim9skkLeave*
 	`g:vim9skk_mode`が無効になったときに発火します
 
-:Vim9ModeChanged				*:Vim9skkModeChanged*
+:Vim9skkModeChanged				*:Vim9skkModeChanged*
 	`g:vim9skk_mode`が変更されたときに発火します
 	`Vim9Disabled`や`Vim9Disabled`の前にも発火します
 
