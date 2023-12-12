@@ -509,7 +509,7 @@ def MapDirectMode()
   MapFunction(g:vim9skk.keymap.hankaku,  'ToggleMode(mode_hankaku)')
   MapFunction(g:vim9skk.keymap.alphabet, 'ToggleMode(mode_alphabet)')
   MapFunction(g:vim9skk.keymap.abbr,     'ToggleAbbr()')
-  MapFunction(g:vim9skk.keymap.midasi,   'SetMidasi()')
+  MapFunction(g:vim9skk.keymap.midasi,   'U("")') # 大文字を押したのと同じ
   # leximaなどがinsertモードを解除してしまうので…
   noremap! <buffer> <script> <BS> <BS>
 enddef
@@ -599,7 +599,7 @@ def U(key: string): string
   # 見出しモードなら…
   var prefix = ''
   const sion = target->matchstr('[a-z]*$')
-  if !!sion
+  if !!sion && !!key
     # Shift押しっぱなしでもローマ字入力できるように頑張る
     prefix = repeat("\<BS>", sion->len()) .. sion
   elseif target !~# g:vim9skk.marker_okuri
