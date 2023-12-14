@@ -28,7 +28,7 @@ var chain_jisyo = {}
 var pum_winid = 0
 var is_registering_user_jisyo = false
 
-const roman_table = {
+var roman_table = {
   # 4文字
   ltsu: 'っ', xtsu: 'っ',
   # 3文字
@@ -79,7 +79,9 @@ const roman_table = {
   zl: '→', zh: '←', zj: '↓', zk: '↑',
   '-': 'ー', '.': '。', ',': '、', '!': '！', '?': '？', '/': '・', '~': '～',
 }
-const roman_table_items = roman_table->items()
+# Init()で作る
+#const roman_table_items = roman_table->items()
+var roman_table_items = []
 
 # {か:'k'}みたいなdict
 # 変換時に「けんさく*する」→「けんさくs」という風に辞書を検索する時に使う
@@ -204,6 +206,9 @@ def Init()
     autocmd CmdlineLeave * OnCmdlineLeave()
     autocmd VimLeave * SaveRecentJisyo()
   augroup END
+  # ユーザー定義のローマ字入力を追加
+  roman_table->extend(g:vim9skk.roman_table)
+  roman_table_items = roman_table->items()
   # 送り仮名テーブルを作成
   for [k, v] in roman_table_items
     okuri_table[v->strcharpart(0, 1)] = k[0]
@@ -587,6 +592,9 @@ def L(chain: string): string
       ->RemoveMarker()
       ->AddStr(chain)
       ->ShowRecent()
+  endif
+  if !kouho
+    ShowMode(true)
   endif
   return prefix .. chain
 enddef
