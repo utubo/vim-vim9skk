@@ -197,6 +197,7 @@ enddef
 
 # 基本 {{{
 def Init()
+  DoUserEvent('Vim9skkInitPre')
   augroup vim9skk
     autocmd!
     autocmd BufEnter * MapToBuf()
