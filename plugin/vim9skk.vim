@@ -55,14 +55,15 @@ noremap! <Plug>(vim9skk-toggle) <ScriptCmd>vim9skk#ToggleSkk()<CR>
 noremap! <Plug>(vim9skk-enable) <ScriptCmd>vim9skk#Enable()<CR>
 noremap! <Plug>(vim9skk-disable) <ScriptCmd>vim9skk#Disable()<CR>
 
-if !!g:vim9skk.keymap.toggle
-  execute $'noremap! {g:vim9skk.keymap.toggle} <Plug>(vim9skk-toggle)'
-  execute $'tnoremap {g:vim9skk.keymap.toggle} <ScriptCmd>Vim9skkTerminalInput<CR>'
-endif
-if !!g:vim9skk.keymap.enable
-  execute $'noremap! {g:vim9skk.keymap.enable} <Plug>(vim9skk-enable)'
-endif
-if !!g:vim9skk.keymap.disable
-  execute $'noremap! {g:vim9skk.keymap.enable} <Plug>(vim9skk-disable)'
-endif
+def Map(lhs: string, keys: any, rhs: string)
+  if !!keys
+    for key in type(keys) ==# v:t_string ? [keys] : keys
+      execute lhs key rhs
+    endfor
+  endif
+enddef
+Map('noremap!', g:vim9skk.keymap.toggle, '<Plug>(vim9skk-toggle)')
+Map('tnoremap', g:vim9skk.keymap.toggle, '<ScriptCmd>Vim9skkTerminalInput<CR>')
+Map('noremap!', g:vim9skk.keymap.enable, '<Plug>(vim9skk-enable)')
+Map('noremap!', g:vim9skk.keymap.disable, '<Plug>(vim9skk-disable)')
 

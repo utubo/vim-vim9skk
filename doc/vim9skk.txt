@@ -213,7 +213,7 @@ COMMANDS					*vim9skk-commands*
 EVENTS						*vim9skk-events*
 
 :Vim9skkInitPre					*:Vim9skkInitPre*
-	vim9skkが初期化される前に発火します
+	vim9skkが初めて有効になり初期化される前に発火します
 
 :Vim9skkEnter					*:Vim9skkEnter*
 	`g:vim9skk_mode`が有効になったときに発火します
