@@ -425,7 +425,7 @@ enddef
 
 def ToggleAbbr(): string
   if mode.id ==# mode_abbr
-    SetMode(mode_hira)
+    TurnOffAbbr()
     return ''
   else
     SetMode(mode_abbr)
@@ -435,6 +435,7 @@ enddef
 
 def TurnOffAbbr()
   if mode.id ==# mode_abbr
+    UnmapAll()
     SetMode(mode_hira)
   endif
 enddef
