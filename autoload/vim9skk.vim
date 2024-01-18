@@ -618,7 +618,7 @@ def U(key: string): string
   if !!sion && !!key
     # Shift押しっぱなしでもローマ字入力できるように頑張る
     prefix = repeat("\<BS>", sion->len()) .. sion
-  elseif target !~# g:vim9skk.marker_okuri
+  elseif target !~# g:vim9skk.marker_okuri && target !=# g:vim9skk.marker_midasi
     # 送り仮名マーカーを設置する
     prefix = g:vim9skk.marker_okuri
   endif
