@@ -903,6 +903,7 @@ def ReadJisyo(path: string): dict<any>
   # 読み込んでスクリプトローカルにキャッシュする
   const [p, enc] = ToFullPathAndEncode(path)
   if !filereadable(p)
+    # 後から辞書ファイルを置かれる可能性があるので、キャッシュしない
     return { lines: [], enc: enc }
   endif
   # iconvはWindowsですごく重いので、読み込み時には全体を変換しない
@@ -937,8 +938,9 @@ export def RegisterToUserJisyo(key: string): list<string>
       echo 'キャンセルしました'
     else
       # ユーザー辞書に登録する
-      const j = ReadJisyo(g:vim9skk.jisyo_user)
       const newline = $'{key} /{value}/'
+      var j = ReadJisyo(g:vim9skk.jisyo_user)
+      jisyo[g:vim9skk.jisyo_user] = j # ユーザー辞書ファイルが無い場合に備えてキャッシュを上書きする
       jisyo[g:vim9skk.jisyo_user].lines += [newline->IconvTo(j.enc)]
       [newline]->WriteJisyo(g:vim9skk.jisyo_user, 'a')
       result += [value]
