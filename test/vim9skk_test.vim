@@ -79,6 +79,14 @@ suite.TestToggleOff = () => {
   )
 }
 
+suite.TestToggleOffOnMidashiMode = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>A\<C-j>a",
+    'あa',
+    '見出しモード中にvim9skkをオフにしたら変換を確定すること'
+  )
+}
+
 suite.TestToKatakana = () => {
   TestOnInsAndCmdline(
     "\<C-j>Katakanaq\<C-j>",
