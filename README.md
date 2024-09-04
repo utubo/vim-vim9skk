@@ -12,7 +12,7 @@ vim9skk は、Vim9 Scriptで実装したSKK日本語入力プラグインです
 コンテナ起動後インサートモードで `<C-j>` で日本語入力できます
 ```
 docker build . -t vim-vim9skk
-docker run -it vim-vim9skk
+docker run --rm vim-vim9skk -it vim-vim9skk
 ```
 
 ## 🔨破壊的変更履歴
