@@ -290,6 +290,7 @@ def OnInsertLeave()
   ToDirectMode()
   TurnOffAbbr()
   RegisterToChainJisyo(after)
+  RegisterToChainJisyo('')
 enddef
 
 def OnCmdlineEnter()
@@ -626,7 +627,9 @@ def SetMidasi(key: string = '', delta: number = 0): string
   SetSkkMode(skkmode_midasi)
   const next_start_pos = GetPos() - delta
   const next_word = GetLine()->matchstr($'\%{end_pos}c.*\%{next_start_pos}c')
-  RegisterToChainJisyo(next_word)
+  if !!next_word
+    RegisterToChainJisyo(next_word)
+  endif
   start_pos = next_start_pos
   return g:vim9skk.marker_midasi .. key->tolower()
 enddef
