@@ -111,7 +111,7 @@ const alphabet_chars = ('０１２３４５６７８９' ..
 const abbr_chars = ('0123456789' ..
   'abcdefghijklmnopqrstuvwxyz' ..
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ..
-  ' !"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
+  '!"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
 # }}}
 
 # ユーティリティー {{{
@@ -424,18 +424,30 @@ enddef
 def ToggleAbbr(): string
   if mode.id ==# mode_abbr
     TurnOffAbbr()
+    if skkmode ==# skkmode_midasi || skkmode ==# skkmode_select
+      return Complete()
+    endif
+    TurnOffAbbr()
     return ''
+  elseif skkmode ==# skkmode_midasi
+    SetMode(mode_abbr)
+    return ''
+  elseif skkmode ==# skkmode_select
+    const c = Complete()
+    SetMode(mode_abbr)
+    return c .. SetMidasi('', len(g:vim9skk.marker_midasi))
   else
     SetMode(mode_abbr)
     return SetMidasi()
   endif
 enddef
 
-def TurnOffAbbr()
+def TurnOffAbbr(): string
   if mode.id ==# mode_abbr
     UnmapAll()
     SetMode(mode_hira)
   endif
+  return ''
 enddef
 
 def ShowMode(popup_even_off: bool)

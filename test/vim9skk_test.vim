@@ -19,6 +19,7 @@ suite.after = () => {
 }
 
 suite.before_each = () => {
+  vim9skk#Disable()
   normal! ggdG
 }
 
@@ -108,6 +109,22 @@ suite.TestToHankakuFromKatakana = () => {
     "\<C-j>qHankaku\<C-q>\<C-j>",
     'ﾊﾝｶｸ',
     '全角カナで入力後に半角ｶﾅへ変換できること'
+  )
+}
+
+suite.TestFromMidasiToAbbrev = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>Benntou/smile\<CR>",
+    'べんとうsmile',
+    '見出しモード中にabbrevに切り替えて入力できること'
+  )
+}
+
+suite.TestFromSelectToAbbrev = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>Benntou\<Space>/smile\<Space>\<CR>\<C-j>",
+    '弁当😄',
+    '選択モード中にabbrevに切り替えて変換できること'
   )
 }
 
