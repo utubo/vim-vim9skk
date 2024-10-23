@@ -132,6 +132,15 @@ suite.TestKeepSkkEnableOnInsert = () => {
   feedkeys($"o\<C-j>on\<Esc>aon\<C-j>\<Esc>aoff\<Esc>", 'xt')
   assert.equals(getline('.'), 'おんおんoff', 'インサートモードでのSKKの状態を保持すること')
 }
+
+suite.TestFromSelectToAbbrev = () => {
+  vim9skk#Disable()
+  feedkeys("o\<C-j>\<Esc>", 'xt')
+  assert.equals(getline('.'), '', '何も入力しないキャンセルできること')
+  vim9skk#Disable()
+  feedkeys("o\<C-j>/\<Esc>", 'xt')
+  assert.equals(getline('.'), '', '何も入力しないキャンセルできること abbrev切り替えあり ')
+}
 # }}}
 
 # 変換 {{{

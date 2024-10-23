@@ -202,9 +202,9 @@ def Init()
     autocmd!
     autocmd BufEnter * MapToBuf()
     autocmd InsertEnter * OnInsertEnter()
-    autocmd InsertLeave * OnInsertLeave()
+    autocmd InsertLeavePre * OnInsertLeavePre()
     autocmd CmdlineEnter * OnCmdlineEnter()
-    autocmd CmdlineLeave * OnCmdlineLeave()
+    autocmd CmdlineLeave * OnCmdlineLeavePre()
     autocmd VimLeave * SaveRecentJisyo()
   augroup END
   # ユーザー定義のローマ字入力を追加
@@ -272,7 +272,7 @@ def OnInsertEnter()
   ShowMode(false)
 enddef
 
-def OnInsertLeave()
+def OnInsertLeavePre()
   if !g:vim9skk_enable
     return
   endif
@@ -307,7 +307,7 @@ def OnCmdlineEnter()
   endif
 enddef
 
-def OnCmdlineLeave()
+def OnCmdlineLeavePre()
   if g:vim9skk_enable
     CloseKouho()
     TurnOffAbbr()
