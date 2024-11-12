@@ -1,4 +1,4 @@
-*vim9skk.txt*	a summary
+*vim9skk.txt*	Vim9 Scriptで実装したSKK日本語入力プラグイン
 
 Author  : utubo
 License : MIT license  {{{
