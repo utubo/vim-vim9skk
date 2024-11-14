@@ -324,7 +324,7 @@ def Redraw()
   endif
 enddef
 
-def ExecuteWithoutRedraw(F: func)
+def WithoutRedraw(F: func)
   lock_redraw = true
   F()
   lock_redraw = false
@@ -847,11 +847,11 @@ enddef
 def PopupKouho(target: string)
   MapSelectMode(!!kouho)
   # getscreencmdposがずれるのでSafeStateを待ってから表示する
-  au vim9skk SafeState * ++once PopupKouhoImpl('')
+  au vim9skk SafeState * ++once PopupKouhoDraw('')
 enddef
 
-def PopupKouhoImpl(target: string)
-  CloseKouho->ExecuteWithoutRedraw()
+def PopupKouhoDraw(target: string)
+  ClosePum->WithoutRedraw()
   if !kouho
     Redraw()
     return
