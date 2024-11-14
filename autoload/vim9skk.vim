@@ -865,6 +865,14 @@ def PopupKouhoImpl(target: string)
     pum_options.line = 'cursor-1'
     pum_options.pos = 'botleft'
   endif
+  var width = 0
+  for k in kouho
+    const w = strdisplaywidth(k)
+    if width < w
+      width = w
+    endif
+  endfor
+  pum_options.col = max([0, min([&columns - width, pum_options.col])])
   pum_winid = popup_create(kouho, pum_options)
   win_execute(pum_winid, ':%s/;/\t/g', 'silent!')
   win_execute(pum_winid, 'setlocal tabstop=12')
