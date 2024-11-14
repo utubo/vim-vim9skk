@@ -108,6 +108,7 @@ g:vim9skk					*g:vim9skk*
 	mode_label_timeout
 		現在のモードのポップアップ表示時間(ミリ秒)
 		0で非表示
+		-1でタイムアウト無し
 	popup_maxheight
 		変換候補の最大表示行数です
 		0で非表示
