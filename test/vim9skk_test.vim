@@ -6,9 +6,9 @@ const assert = themis#helper('assert')
 # テスト共通処理 {{{
 const jisyo_recent = tempname()
 g:vim9skk = {
-  jisyo: [expand('<sfile>:p:h') .. '/SKK-JISYO.test'],
+  jisyo: [expand('<script>:p:h') .. '/SKK-JISYO.test'],
   jisyo_recent: jisyo_recent }
-execute 'source' expand('<sfile>:p:h:h') .. '/plugin/vim9skk.vim'
+execute 'source' expand('<script>:p:h:h') .. '/plugin/vim9skk.vim'
 
 suite.before = () => {
   writefile([''], jisyo_recent)
