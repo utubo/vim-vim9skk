@@ -18,6 +18,7 @@ var default = {
     abbr: 'ab',
   },
   mode_label_timeout: 3000,
+  popup_minheight: 5,
   popup_maxheight: 20,
   search_limit: 100,
   keymap: {

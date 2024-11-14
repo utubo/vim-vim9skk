@@ -675,13 +675,14 @@ def StartSelect(): string
   if skkmode ==# skkmode_select
     return Select(1)
   endif
-  GetTarget()->GetAllKouho()
+  const target = GetTarget()
+  target->GetAllKouho()
   if !kouho
     CloseKouho()
     return ''
   endif
   SetSkkMode(skkmode_select)
-  PopupKouho()
+  PopupKouho(target)
   kouho_index = 0
   return Select(1)
 enddef
@@ -823,13 +824,22 @@ def ShowRecent(target: string)
     kouho = kouho->Uniq()->AddDetail('変換履歴')
     kouho_index = -1
     okuri = ''
-    PopupKouho()
+    PopupKouho(target)
   endif
 enddef
 # }}}
 
 # 候補をポップアップ {{{
-def PopupKouho()
+def PopupKouho(target: string)
+  if !target && mode() ==# 'c'
+    # getscreencmdposがずれるのでSafeStateを待ってから表示する
+    au vim9skk SafeState * ++once PopupKouhoImpl('')
+  else
+    PopupKouhoImpl(target)
+  endif
+enddef
+
+def PopupKouhoImpl(target: string)
   CloseKouho->ExecuteWithoutRedraw()
   if !kouho
     Redraw()
@@ -839,19 +849,21 @@ def PopupKouho()
   if g:vim9skk.popup_maxheight <= 0
     return
   endif
+  const midasi_width = !target ? 0 : strdisplaywidth(g:vim9skk.marker_midasi)
   var pum_options = {
-    col: 'cursor',
-    line: 'cursor-1',
-    pos: 'botright',
+    col: screenpos(0, line('.'), start_pos).col + midasi_width,
+    line: 'cursor+1',
+    pos: 'topleft',
     cursorline: true,
     maxheight: g:vim9skk.popup_maxheight,
   }
   if mode() ==# 'c'
-    pum_options.col = getcmdscreenpos()
+    pum_options.col = getcmdscreenpos() - strdisplaywidth(target) + midasi_width
     pum_options.line = &lines - 1
-  elseif screenrow() < &lines / 2
-    pum_options.line = 'cursor+1'
-    pum_options.pos = 'topright'
+    pum_options.pos = 'botleft'
+  elseif &lines - g:vim9skk.popup_minheight < screenrow()
+    pum_options.line = 'cursor-1'
+    pum_options.pos = 'botleft'
   endif
   pum_winid = popup_create(kouho, pum_options)
   win_execute(pum_winid, ':%s/;/\t/g', 'silent!')
@@ -888,7 +900,7 @@ def ShowChainJisyo()
   if chain_jisyo->has_key(last_word)
     kouho = chain_jisyo[last_word]->AddDetail('入力履歴')
     kouho_index = -1
-    PopupKouho()
+    PopupKouho('')
   endif
 enddef
 # }}}
