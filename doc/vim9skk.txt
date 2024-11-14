@@ -103,6 +103,8 @@ g:vim9skk					*g:vim9skk*
 		デフォルト: `*`
 	mode_label
 		現在のモードを表す文字です
+		`mode_label.midasi`は`marker_midasi`が空の場合だけ
+		ポップアップします
 	mode_label_timeout
 		現在のモードのポップアップ表示時間(ミリ秒)
 		0で非表示
@@ -173,6 +175,7 @@ g:vim9skk					*g:vim9skk*
 			hankaku: 'ｶﾅ',
 			alphabet: 'Ａ',
 			abbr: 'ab',
+			midasi: '漢',
 		},
 		mode_label_timeout: 3000,
 		popup_maxheight: 20,

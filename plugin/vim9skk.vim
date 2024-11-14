@@ -16,6 +16,7 @@ var default = {
     hankaku: 'ｶﾅ',
     alphabet: 'Ａ',
     abbr: 'ab',
+    midasi: '漢',
   },
   mode_label_timeout: 3000,
   popup_minheight: 5,

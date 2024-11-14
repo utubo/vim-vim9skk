@@ -401,6 +401,9 @@ def SetSkkMode(s: number)
   if skkmode !=# s
     skkmode = s
     MapMidasiMode()
+    if s ==# skkmode_midasi && !g:vim9skk.marker_midasi
+      ShowMode(false)
+    endif
   endif
 enddef
 
@@ -451,8 +454,12 @@ def TurnOffAbbr(): string
 enddef
 
 def ShowMode(popup_even_off: bool)
-  g:vim9skk_mode = g:vim9skk_enable ? mode.label : g:vim9skk.mode_label.off
-  if 0 < g:vim9skk.mode_label_timeout && (popup_even_off || g:vim9skk_enable)
+  g:vim9skk_mode = g:vim9skk_enable
+    ? skkmode ==# skkmode_midasi
+    ? g:vim9skk.mode_label.midasi
+    : mode.label
+    : g:vim9skk.mode_label.off
+  if !!g:vim9skk_mode && 0 < g:vim9skk.mode_label_timeout && (popup_even_off || g:vim9skk_enable)
     # マーカーを削除することで位置がズレるのでtimerで誤魔化す
     timer_start(1, (t: number) => {
       ClosePum()
