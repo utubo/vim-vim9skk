@@ -845,17 +845,17 @@ enddef
 
 # 候補をポップアップ {{{
 def PopupKouho(target: string)
-  CloseKouho->ExecuteWithoutRedraw()
-  if !kouho
-    Redraw()
-    return
-  endif
   MapSelectMode(true)
   # getscreencmdposがずれるのでSafeStateを待ってから表示する
   au vim9skk SafeState * ++once PopupKouhoImpl('')
 enddef
 
 def PopupKouhoImpl(target: string)
+  CloseKouho->ExecuteWithoutRedraw()
+  if !kouho
+    Redraw()
+    return
+  endif
   if g:vim9skk.popup_maxheight <= 0
     return
   endif
