@@ -845,7 +845,7 @@ enddef
 
 # 候補をポップアップ {{{
 def PopupKouho(target: string)
-  MapSelectMode(true)
+  MapSelectMode(!!kouho)
   # getscreencmdposがずれるのでSafeStateを待ってから表示する
   au vim9skk SafeState * ++once PopupKouhoImpl('')
 enddef
