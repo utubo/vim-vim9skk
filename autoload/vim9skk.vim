@@ -453,6 +453,15 @@ def TurnOffAbbr(): string
   return ''
 enddef
 
+def PopupMode()
+  ClosePum()
+  pum_winid = popup_create(g:vim9skk_mode, {
+    col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
+    line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
+    time: g:vim9skk.mode_label_timeout, })
+  Redraw()
+enddef
+
 def ShowMode(popup_even_off: bool)
   g:vim9skk_mode = g:vim9skk_enable
     ? skkmode ==# skkmode_midasi
@@ -460,15 +469,8 @@ def ShowMode(popup_even_off: bool)
     : mode.label
     : g:vim9skk.mode_label.off
   if !!g:vim9skk_mode && 0 < g:vim9skk.mode_label_timeout && (popup_even_off || g:vim9skk_enable)
-    # マーカーを削除することで位置がズレるのでtimerで誤魔化す
-    timer_start(1, (t: number) => {
-      ClosePum()
-      pum_winid = popup_create(g:vim9skk_mode, {
-        col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
-        line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
-        time: g:vim9skk.mode_label_timeout, })
-      Redraw()
-    })
+    # マーカーを削除することで位置がズレるのでSafeStateを待つ
+    au vim9skk SafeState * ++once PopupMode()
   else
     ClosePum()
     Redraw()
@@ -879,7 +881,7 @@ def PopupKouhoImpl(target: string)
       width = w
     endif
   endfor
-  pum_options.col = max([0, min([&columns - width, pum_options.col])])
+  pum_options.col = max([1, min([&columns - width, pum_options.col])])
   pum_winid = popup_create(kouho, pum_options)
   win_execute(pum_winid, ':%s/;/\t/g', 'silent!')
   win_execute(pum_winid, 'setlocal tabstop=12')
