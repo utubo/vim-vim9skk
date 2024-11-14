@@ -468,7 +468,9 @@ enddef
 
 def ShowMode(popup_even_off: bool)
   g:vim9skk_mode = g:vim9skk_enable
-    ? skkmode ==# skkmode_midasi
+    ? mode.id ==# mode_abbr
+    ? mode.label
+    : skkmode ==# skkmode_midasi
     ? g:vim9skk.mode_label.midasi
     : mode.label
     : g:vim9skk.mode_label.off
@@ -843,12 +845,8 @@ enddef
 
 # 候補をポップアップ {{{
 def PopupKouho(target: string)
-  if !target && mode() ==# 'c'
-    # getscreencmdposがずれるのでSafeStateを待ってから表示する
-    au vim9skk SafeState * ++once PopupKouhoImpl('')
-  else
-    PopupKouhoImpl(target)
-  endif
+  # getscreencmdposがずれるのでSafeStateを待ってから表示する
+  au vim9skk SafeState * ++once PopupKouhoImpl('')
 enddef
 
 def PopupKouhoImpl(target: string)
