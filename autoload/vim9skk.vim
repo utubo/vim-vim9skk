@@ -329,6 +329,10 @@ def WithoutRedraw(F: func)
   F()
   lock_redraw = false
 enddef
+
+def Lazy(F: func)
+  timer_start(1, (t: number) => F())
+enddef
 # }}}
 
 # 入力モード制御 {{{
@@ -475,10 +479,9 @@ def ShowMode(popup_even_off: bool)
     : mode.label
     : g:vim9skk.mode_label.off
   if !g:vim9skk_mode || !g:vim9skk_enable && (!popup_even_off || g:vim9skk.mode_label_timeout < 1)
-    au vim9skk SafeState * ++once ClosePum()
+    ClosePum->Lazy()
   else
-    # マーカーを削除することで位置がズレるのでSafeStateを待つ
-    au vim9skk SafeState * ++once PopupMode()
+    PopupMode->Lazy()
   endif
 enddef
 
@@ -689,14 +692,13 @@ def StartSelect(): string
   if skkmode ==# skkmode_select
     return Select(1)
   endif
-  const target = GetTarget()
-  target->GetAllKouho()
+  GetTarget()->GetAllKouho()
   if !kouho
     CloseKouho()
     return ''
   endif
   SetSkkMode(skkmode_select)
-  PopupKouho(target)
+  PopupKouho(1)
   kouho_index = 0
   return Select(1)
 enddef
@@ -776,7 +778,7 @@ enddef
 def Select(d: number): string
   SetSkkMode(skkmode_select)
   kouho_index = Cyclic(kouho_index + d, len(kouho))
-  HighlightKouho()
+  HighlightKouho->Lazy()
   return ReplaceTarget($'{g:vim9skk.marker_select}{GetSelectedKouho()}{okuri}')
 enddef
 
@@ -838,19 +840,20 @@ def ShowRecent(target: string)
     kouho = kouho->Uniq()->AddDetail('変換履歴')
     kouho_index = -1
     okuri = ''
-    PopupKouho(target)
+    PopupKouho()
   endif
 enddef
 # }}}
 
 # 候補をポップアップ {{{
-def PopupKouho(target: string)
+def PopupKouho(default: number = 0)
   MapSelectMode(!!kouho)
-  # getscreencmdposがずれるのでSafeStateを待ってから表示する
-  au vim9skk SafeState * ++once PopupKouhoDraw('')
+  () => {
+    PopupKouhoDraw(default)
+  }->Lazy()
 enddef
 
-def PopupKouhoDraw(target: string)
+def PopupKouhoDraw(default: number = 0)
   ClosePum->WithoutRedraw()
   if !kouho
     Redraw()
@@ -859,6 +862,7 @@ def PopupKouhoDraw(target: string)
   if g:vim9skk.popup_maxheight <= 0
     return
   endif
+  const target = GetTarget()
   const midasi_width = !target ? 0 : strdisplaywidth(g:vim9skk.marker_midasi)
   var pum_options = {
     col: screenpos(0, line('.'), start_pos).col + midasi_width,
@@ -887,6 +891,9 @@ def PopupKouhoDraw(target: string)
   win_execute(pum_winid, ':%s/;/\t/g', 'silent!')
   win_execute(pum_winid, 'setlocal tabstop=12')
   win_execute(pum_winid, 'syntax match PMenuExtra /\t.*/')
+  if default
+    kouho_index = default
+  endif
   HighlightKouho()
 enddef
 
@@ -918,7 +925,7 @@ def ShowChainJisyo()
   if chain_jisyo->has_key(last_word)
     kouho = chain_jisyo[last_word]->AddDetail('入力履歴')
     kouho_index = -1
-    PopupKouho('')
+    PopupKouho()
   endif
 enddef
 # }}}
