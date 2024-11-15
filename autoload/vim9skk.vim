@@ -222,7 +222,8 @@ def Init()
     autocmd InsertLeavePre * OnInsertLeavePre()
     autocmd CmdlineEnter * OnCmdlineEnter()
     autocmd CmdlineLeave * OnCmdlineLeavePre()
-    autocmd VimLeave * SaveRecentJisyo()
+    autocmd VimLeave  Sutocmd VimLeave * SaveRecentJisyo()
+    autocmd CursorMovedI,CursorMovedC * FollowCursorModePum()
   augroup END
   # ユーザー定義のローマ字入力を追加
   roman_table->extend(g:vim9skk.roman_table)
@@ -479,7 +480,6 @@ def PopupMode()
   endif
   pum_winid = popup_create(g:vim9skk_mode, a)
   pum_kind = pum_kind_mode
-  FollowCursorModePum()
 enddef
 
 def FollowCursorModePum()
@@ -490,7 +490,6 @@ def FollowCursorModePum()
     col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
     line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
   })
-  au vim9skk CursorMovedI,CursorMovedC * ++once FollowCursorModePum()
 enddef
 # }}}
 
