@@ -462,6 +462,7 @@ def PopupMode()
   var a = {
     col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
     line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
+    moved: 'any',
   }
   if 0 < g:vim9skk.mode_label_timeout
     a.time = g:vim9skk.mode_label_timeout
