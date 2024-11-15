@@ -6,8 +6,6 @@ var default = {
   jisyo_recent: '~/VIM9SKK-JISYO.recent',
   recent: 1000,
   parens: ['（）', '〔〕', '［］', '｛｝', '〈〉', '《》', '「」', '『』', '【】'],
-  marker_midasi: '▽',
-  marker_select: '▼',
   marker_okuri: '*',
   mode_label: {
     off: '_A',
@@ -16,7 +14,7 @@ var default = {
     hankaku: 'ｶﾅ',
     alphabet: 'Ａ',
     abbr: 'ab',
-    midasi: '漢',
+    midasi: '▽',
   },
   mode_label_timeout: 3000,
   popup_minheight: 5,

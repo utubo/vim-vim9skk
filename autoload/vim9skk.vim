@@ -16,6 +16,7 @@ var mode = { id: mode_hira, use_roman: true, items: [] }
 var skkmode = skkmode_direct
 var start_pos = 0
 var end_pos = 1
+var okuri_pos = 0
 var pos_delta = 0 # 確定前後のカーソル位置の差異
 var henkan_key = ''
 var okuri = ''
@@ -405,7 +406,7 @@ def SetSkkMode(s: number)
   if skkmode !=# s
     skkmode = s
     MapMidasiMode()
-    if s ==# skkmode_midasi && !g:vim9skk.marker_midasi
+    if s ==# skkmode_midasi
       ShowMode(false)
     endif
   endif
@@ -442,7 +443,7 @@ def ToggleAbbr(): string
   elseif skkmode ==# skkmode_select
     const c = Complete()
     SetMode(mode_abbr)
-    return c .. SetMidasi('', len(g:vim9skk.marker_midasi))
+    return c .. SetMidasi()
   else
     SetMode(mode_abbr)
     return SetMidasi()
@@ -480,9 +481,9 @@ def ShowMode(popup_even_off: bool)
     : mode.label
     : g:vim9skk.mode_label.off
   if !g:vim9skk_mode || !g:vim9skk_enable && (!popup_even_off || g:vim9skk.mode_label_timeout < 1)
-    ClosePum->Lazy()
+    ClosePum()
   else
-    PopupMode->Lazy()
+    PopupMode()
   endif
 enddef
 
@@ -636,8 +637,8 @@ def U(key: string): string
     return Complete() .. key
   endif
   const target = GetTarget()
-  # 見出しマークがなければ見出しモードへ遷移する
-  if skkmode ==# skkmode_direct || !target->StartsWith(g:vim9skk.marker_midasi)
+  # 直接入力なら見出しモードへ遷移する
+  if skkmode ==# skkmode_direct
     return SetMidasi(key)
   endif
   # 見出しモードなら…
@@ -646,8 +647,9 @@ def U(key: string): string
   if !!sion && !!key
     # Shift押しっぱなしでもローマ字入力できるように頑張る
     prefix = repeat("\<BS>", sion->len()) .. sion
-  elseif target !~# g:vim9skk.marker_okuri && target !=# g:vim9skk.marker_midasi
+  elseif !!target && !okuri_pos
     # 送り仮名マーカーを設置する
+    okuri_pos = GetPos()
     prefix = g:vim9skk.marker_okuri
   endif
   return prefix .. key->tolower()
@@ -655,13 +657,14 @@ enddef
 
 def SetMidasi(key: string = '', delta: number = 0): string
   SetSkkMode(skkmode_midasi)
+  okuri_pos = 0
   const next_start_pos = GetPos() - delta
   const next_word = GetLine()->matchstr($'\%{end_pos}c.*\%{next_start_pos}c')
   if !!next_word
     RegisterToChainJisyo(next_word)
   endif
   start_pos = next_start_pos
-  return g:vim9skk.marker_midasi .. key->tolower()
+  return key->tolower()
 enddef
 
 def SetPrefix(): string
@@ -680,8 +683,6 @@ enddef
 
 def RemoveMarker(s: string): string
   return s
-    ->substitute(g:vim9skk.marker_midasi, '', '')
-    ->substitute(g:vim9skk.marker_select, '', '')
     ->substitute(g:vim9skk.marker_okuri, '', '')
 enddef
 
@@ -744,7 +745,6 @@ def GetAllKouho(target: string)
   endif
   # `▽ほげ*ふが`を見出しと送り仮名に分割する
   const [m, o] = target
-    ->substitute(g:vim9skk.marker_midasi, '', '')
     ->Split(g:vim9skk.marker_okuri)
   kouho = [m] # 候補一つ目は無変換
   okuri = o # 送り仮名は候補選択時に使うのでスクリプトローカルに保持しておく
@@ -779,8 +779,8 @@ enddef
 def Select(d: number): string
   SetSkkMode(skkmode_select)
   kouho_index = Cyclic(kouho_index + d, len(kouho))
-  HighlightKouho->Lazy()
-  return ReplaceTarget($'{g:vim9skk.marker_select}{GetSelectedKouho()}{okuri}')
+  HighlightKouho()
+  return ReplaceTarget($'{GetSelectedKouho()}{okuri}')
 enddef
 
 def AddLeftForParen(chain: string, p: string): string
@@ -849,12 +849,6 @@ enddef
 # 候補をポップアップ {{{
 def PopupKouho(default: number = 0)
   MapSelectMode(!!kouho)
-  () => {
-    PopupKouhoDraw(default)
-  }->Lazy()
-enddef
-
-def PopupKouhoDraw(default: number = 0)
   ClosePum->WithoutRedraw()
   if !kouho
     Redraw()
@@ -864,16 +858,15 @@ def PopupKouhoDraw(default: number = 0)
     return
   endif
   const target = GetTarget()
-  const midasi_width = !target ? 0 : strdisplaywidth(g:vim9skk.marker_midasi)
   var pum_options = {
-    col: screenpos(0, line('.'), start_pos).col + midasi_width,
+    col: screenpos(0, line('.'), start_pos).col,
     line: 'cursor+1',
     pos: 'topleft',
     cursorline: true,
     maxheight: g:vim9skk.popup_maxheight,
   }
   if mode() ==# 'c'
-    pum_options.col = getcmdscreenpos() - strdisplaywidth(target) + midasi_width
+    pum_options.col = getcmdscreenpos() - strdisplaywidth(target)
     pum_options.line = &lines - 1
     pum_options.pos = 'botleft'
   elseif &lines - g:vim9skk.popup_minheight < screenrow()
