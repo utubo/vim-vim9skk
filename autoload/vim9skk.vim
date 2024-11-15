@@ -454,7 +454,6 @@ def TurnOffAbbr(): string
   endif
   return ''
 enddef
-enddef
 # }}}
 
 # 入力モードをポップアップ {{{
@@ -492,11 +491,6 @@ def FollowCursorModePum()
     line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
   })
   au vim9skk CursorMovedI,CursorMovedC * ++once FollowCursorModePum()
-enddef
-
-def PopupMode()
-  PopupMode()
-  redraw
 enddef
 # }}}
 
