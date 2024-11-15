@@ -16,14 +16,12 @@ RUN addgroup -S $USER && \
 USER $USER
 WORKDIR $HOME
 
+# SKKの辞書をダウンロードする
+RUN wget http://openlab.jp/skk/dic/SKK-JISYO.L.gz && \
+    gunzip -f SKK-JISYO.L.gz
+
 ADD https://api.github.com/repos/$REPOS/git/refs/heads/$BRANCH version.json
 RUN mkdir -p ~/.vim/pack/foo/start && \
     cd ~/.vim/pack/foo/start && \
     git clone https://github.com/$REPOS.git
-
-# ↑ここまでプラグインをdockerで試すテンプレ
-
-# SKKの辞書をダウンロードする
-RUN wget http://openlab.jp/skk/dic/SKK-JISYO.L.gz && \
-    gunzip -f SKK-JISYO.L.gz
 
