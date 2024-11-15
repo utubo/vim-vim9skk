@@ -11,6 +11,10 @@ const skkmode_direct = 0
 const skkmode_midasi = 1
 const skkmode_select = 2
 
+const pum_kind_none = 0
+const pum_kind_mode = 1
+const pum_kind_kouho = 2
+
 var initialized = false
 var mode = { id: mode_hira, use_roman: true, items: [] }
 var skkmode = skkmode_direct
@@ -27,6 +31,7 @@ var jisyo = {}
 var recent_jisyo = {}
 var chain_jisyo = {}
 var pum_winid = 0
+var pum_kind = pum_kind_none
 var is_registering_user_jisyo = false
 
 var roman_table = {
@@ -196,6 +201,17 @@ def DoUserEvent(event: string)
 enddef
 # }}}
 
+# 表示制御 {{{
+def ClosePum()
+  if !!pum_winid
+    popup_close(pum_winid)
+    pum_winid = 0
+    pum_kind = pum_kind_none
+    kouho_index = -1
+  endif
+enddef
+# }}}
+
 # 基本 {{{
 def Init()
   DoUserEvent('Vim9skkInitPre')
@@ -239,7 +255,7 @@ export def Enable()
   endif
   MapToBuf()
   ToDirectMode()
-  ShowMode(true)
+  PopupMode()
   DoUserEvent('Vim9skkModeChanged')
   DoUserEvent('Vim9skkEnter')
 enddef
@@ -254,7 +270,7 @@ export def Disable(popup_even_off: bool = true)
   g:vim9skk_enable = false
   UnmapAll()
   CloseKouho()
-  ShowMode(popup_even_off)
+  PopupMode()
   DoUserEvent('Vim9skkModeChanged')
   DoUserEvent('Vim9skkLeave')
 enddef
@@ -270,7 +286,7 @@ export def ToggleSkk()
 enddef
 
 def OnInsertEnter()
-  ShowMode(false)
+  PopupMode()
 enddef
 
 def OnInsertLeavePre()
@@ -297,11 +313,12 @@ enddef
 def OnCmdlineEnter()
   # '@'も含めたいがredrawでecho出力がクリアされてしまう
   if getcmdtype() =~# '[/?]'
-    ShowMode(false)
+    PopupMode()
   elseif getcmdtype() ==# ':'
     Disable(false)
   else
     ClosePum()
+    redraw
   endif
   if g:vim9skk_enable
     ToDirectMode()
@@ -313,26 +330,6 @@ def OnCmdlineLeavePre()
     CloseKouho()
     TurnOffAbbr()
   endif
-enddef
-# }}}
-
-# ちらつき防止 {{{
-var lock_redraw = false
-
-def Redraw()
-  if !lock_redraw
-    redraw
-  endif
-enddef
-
-def WithoutRedraw(F: func)
-  lock_redraw = true
-  F()
-  lock_redraw = false
-enddef
-
-def Lazy(F: func)
-  timer_start(1, (t: number) => F())
 enddef
 # }}}
 
@@ -391,7 +388,7 @@ def SetMode(m: number)
   mode = GetModeSettings(m)
   MapDirectMode()
   if skkmode !=# skkmode_select
-    ShowMode(true)
+    PopupMode()
   endif
   silent! doautocmd User Vim9skkModeChanged
 enddef
@@ -407,7 +404,7 @@ def SetSkkMode(s: number)
     skkmode = s
     MapMidasiMode()
     if s ==# skkmode_midasi
-      ShowMode(false)
+      PopupMode()
     endif
   endif
 enddef
@@ -457,22 +454,11 @@ def TurnOffAbbr(): string
   endif
   return ''
 enddef
-
-def PopupMode()
-  ClosePum()
-  var a = {
-    col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
-    line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
-    moved: 'any',
-  }
-  if 0 < g:vim9skk.mode_label_timeout
-    a.time = g:vim9skk.mode_label_timeout
-  endif
-  pum_winid = popup_create(g:vim9skk_mode, a)
-  Redraw()
 enddef
+# }}}
 
-def ShowMode(popup_even_off: bool)
+# 入力モードをポップアップ {{{
+def PopupMode()
   g:vim9skk_mode = g:vim9skk_enable
     ? mode.id ==# mode_abbr
     ? mode.label
@@ -480,20 +466,37 @@ def ShowMode(popup_even_off: bool)
     ? g:vim9skk.mode_label.midasi
     : mode.label
     : g:vim9skk.mode_label.off
-  if !g:vim9skk_mode || !g:vim9skk_enable && (!popup_even_off || g:vim9skk.mode_label_timeout < 1)
-    ClosePum()
-  else
-    PopupMode()
+  ClosePum()
+  if !g:vim9skk_mode
+    redraw
+    return
   endif
+  var a = {
+    col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
+    line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
+  }
+  if !g:vim9skk_enable
+    a.time = max([1, g:vim9skk.mode_label_timeout])
+  endif
+  pum_winid = popup_create(g:vim9skk_mode, a)
+  pum_kind = pum_kind_mode
+  FollowCursorModePum()
 enddef
 
-def ClosePum()
-  if !!pum_winid
-    popup_close(pum_winid)
-    pum_winid = 0
-    kouho_index = -1
-    Redraw()
+def FollowCursorModePum()
+  if !pum_winid || pum_kind !=# pum_kind_mode
+    return
   endif
+  popup_move(pum_winid, {
+    col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
+    line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
+  })
+  au vim9skk CursorMovedI,CursorMovedC * ++once FollowCursorModePum()
+enddef
+
+def PopupMode()
+  PopupMode()
+  redraw
 enddef
 # }}}
 
@@ -625,7 +628,7 @@ def L(chain: string): string
       ->ShowRecent()
   endif
   if !kouho
-    ShowMode(true)
+    PopupMode()
   endif
   return prefix .. chain
 enddef
@@ -811,7 +814,7 @@ enddef
 def AfterComplete(chain: string): string
   ShowChainJisyo()
   if !kouho
-    ShowMode(true)
+    PopupMode()
   endif
   return chain
 enddef
@@ -849,9 +852,9 @@ enddef
 # 候補をポップアップ {{{
 def PopupKouho(default: number = 0)
   MapSelectMode(!!kouho)
-  ClosePum->WithoutRedraw()
+  ClosePum()
   if !kouho
-    Redraw()
+    redraw
     return
   endif
   if g:vim9skk.popup_maxheight <= 0
@@ -882,6 +885,7 @@ def PopupKouho(default: number = 0)
   endfor
   pum_options.col = max([1, min([&columns - width, pum_options.col])])
   pum_winid = popup_create(kouho, pum_options)
+  pum_kind = pum_kind_kouho
   win_execute(pum_winid, ':%s/;/\t/g', 'silent!')
   win_execute(pum_winid, 'setlocal tabstop=12')
   win_execute(pum_winid, 'syntax match PMenuExtra /\t.*/')
@@ -895,13 +899,14 @@ def HighlightKouho()
   if pum_winid !=# 0
     win_execute(pum_winid, $':{kouho_index + 1}')
     popup_setoptions(pum_winid, { cursorline: 0 <= kouho_index })
-    Redraw()
+    redraw
   endif
 enddef
 
 def CloseKouho()
   MapSelectMode(false)
   ClosePum()
+  redraw
 enddef
 # }}}
 
@@ -975,7 +980,7 @@ export def RegisterToUserJisyo(key: string): list<string>
   var result = []
   try
     SetSkkMode(skkmode_direct)
-    autocmd vim9skk CmdlineEnter * ++once ShowMode(false)
+    autocmd vim9skk CmdlineEnter * ++once PopupMode()
     const value = input($'ユーザー辞書に登録({key}): ')->trim()
     if !value
       echo 'キャンセルしました'

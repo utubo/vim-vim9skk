@@ -16,7 +16,7 @@ var default = {
     abbr: 'ab',
     midasi: '▽',
   },
-  mode_label_timeout: 3000,
+  mode_label_timeout: 1000,
   popup_minheight: 5,
   popup_maxheight: 20,
   search_limit: 100,
