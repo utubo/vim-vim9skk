@@ -820,35 +820,6 @@ def AfterComplete(chain: string): string
 enddef
 # }}}
 
-# 変換履歴をポップアップ {{{
-def AddDetail(list: list<string>, detail: string): list<string>
-  var result = []
-  for i in list
-    result += [$'{i};{detail}']
-  endfor
-  return result
-enddef
-
-def ShowRecent(target: string)
-  kouho = []
-  const j = ReadRecentJisyo()
-  const head = target->IconvTo(j.enc)
-  for line in j.lines
-    if line->StartsWith(head)
-      kouho += line->IconvFrom(j.enc)->Split(' ')[1]->split('/')
-    endif
-  endfor
-  if !len(kouho)
-    CloseKouho()
-  else
-    kouho = kouho->Uniq()->AddDetail('変換履歴')
-    kouho_index = -1
-    okuri = ''
-    PopupKouho()
-  endif
-enddef
-# }}}
-
 # 候補をポップアップ {{{
 def PopupKouho(default: number = 0)
   MapSelectMode(!!kouho)
@@ -910,7 +881,36 @@ def CloseKouho()
 enddef
 # }}}
 
-# 連鎖補完 {{{
+# 変換履歴をポップアップ {{{
+def AddDetail(list: list<string>, detail: string): list<string>
+  var result = []
+  for i in list
+    result += [$'{i};{detail}']
+  endfor
+  return result
+enddef
+
+def ShowRecent(target: string)
+  kouho = []
+  const j = ReadRecentJisyo()
+  const head = target->IconvTo(j.enc)
+  for line in j.lines
+    if line->StartsWith(head)
+      kouho += line->IconvFrom(j.enc)->Split(' ')[1]->split('/')
+    endif
+  endfor
+  if !len(kouho)
+    CloseKouho()
+  else
+    kouho = kouho->Uniq()->AddDetail('変換履歴')
+    kouho_index = -1
+    okuri = ''
+    PopupKouho()
+  endif
+enddef
+# }}}
+
+# 連鎖補完をポップアップ {{{
 # 🧪様子見中
 def RegisterToChainJisyo(next_word: string)
   if !!last_word && !!next_word
