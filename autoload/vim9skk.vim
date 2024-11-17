@@ -287,7 +287,9 @@ export def ToggleSkk()
 enddef
 
 def OnInsertEnter()
-  PopupMode()
+  if g:vim9skk_enable
+    PopupMode()
+  endif
 enddef
 
 def OnInsertLeavePre()
