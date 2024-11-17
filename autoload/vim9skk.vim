@@ -569,7 +569,7 @@ def MapRoman()
   for [key, value] in mode.items
     const k = key->EscapeForMap()
     const v = value->escape('"|\\')
-    const flg = mode.use_roman && value =~# '[a-z]$' ? 'it' : 'nit'
+    # Note: feedkeysだとwindowsで`せ`が文字化けする
     execute $'{map} <buffer> <expr> <script> {k} vim9skk#L("{v}")'
   endfor
 enddef
@@ -623,7 +623,13 @@ export def L(chain: string): string
   if !kouho
     PopupMode()
   endif
-  return prefix .. chain
+  var v = chain
+  var suffix = ''
+  if mode.use_roman  && v =~# '[a-z]$'
+    feedkeys(v[-1], 'it')
+    v = v[ : -2]
+  endif
+  return prefix .. v
 enddef
 
 # 大文字入力時(Upper)
