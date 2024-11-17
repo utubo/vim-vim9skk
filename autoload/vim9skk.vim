@@ -570,7 +570,7 @@ def MapRoman()
     const k = key->EscapeForMap()
     const v = value->escape('"|\\')
     const flg = mode.use_roman && value =~# '[a-z]$' ? 'it' : 'nit'
-    execute $'{map} <buffer> <script> {k} <ScriptCmd>L("{v}")->feedkeys("{flg}")<CR>'
+    execute $'{map} <buffer> <expr> <script> {k} vim9skk#L("{v}")'
   endfor
 enddef
 
@@ -609,7 +609,7 @@ def UnmapAll()
 enddef
 
 # 小文字入力時(Lower)
-def L(chain: string): string
+export def L(chain: string): string
   var prefix = ''
   if skkmode ==# skkmode_select
     prefix = Complete()
