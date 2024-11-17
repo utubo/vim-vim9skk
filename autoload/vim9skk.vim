@@ -407,7 +407,7 @@ def SetSkkMode(s: number)
     skkmode = s
     MapMidasiMode()
     if s ==# skkmode_midasi
-      PopupMode()
+      PopupMode(true)
     endif
   endif
 enddef
@@ -460,11 +460,9 @@ enddef
 # }}}
 
 # 入力モードをポップアップ {{{
-def PopupMode()
+def PopupMode(b: bool = false)
   g:vim9skk_mode = g:vim9skk_enable
-    ? mode.id ==# mode_abbr
-    ? mode.label
-    : skkmode ==# skkmode_midasi
+    ? skkmode ==# skkmode_midasi && mode.id !=# mode_abbr
     ? g:vim9skk.mode_label.midasi
     : mode.label
     : g:vim9skk.mode_label.off
@@ -473,10 +471,7 @@ def PopupMode()
     redraw
     return
   endif
-  var a = {
-    col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
-    line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
-  }
+  var a = GetModePumScreenPos()
   if !g:vim9skk_enable
     a.time = max([1, g:vim9skk.mode_label_timeout])
   endif
@@ -484,14 +479,19 @@ def PopupMode()
   pum_kind = pum_kind_mode
 enddef
 
+def GetModePumScreenPos(): any
+  var a = {
+    col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
+    line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
+  }
+  return a
+enddef
+
 def FollowCursorModePum()
   if !pum_winid || pum_kind !=# pum_kind_mode
     return
   endif
-  popup_move(pum_winid, {
-    col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
-    line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
-  })
+  popup_move(pum_winid, GetModePumScreenPos())
 enddef
 # }}}
 
