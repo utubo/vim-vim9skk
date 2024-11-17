@@ -624,7 +624,6 @@ export def L(chain: string): string
     PopupMode()
   endif
   var v = chain
-  var suffix = ''
   if mode.use_roman  && v =~# '[a-z]$'
     feedkeys(v[-1], 'it')
     v = v[ : -2]
