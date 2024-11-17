@@ -7,10 +7,10 @@ on:
   # Triggers the workflow on push or pull request events but only for the "master" branch
   push:
     branches: [ "main" ]
-    paths: [ "**.vim" ]
+    paths: [ "**.vim", "ci.yml" ]
   pull_request:
     branches: [ "main" ]
-    paths: [ "**.vim" ]
+    paths: [ "**.vim", "ci.yml" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -32,7 +32,6 @@ jobs:
       - uses: actions/checkout@v3
       - name: Initialize
         run: |
-          sudo apt-get update
           git clone --depth 1 --branch master --single-branch https://github.com/thinca/vim-themis /tmp/vim-themis
       - name: Run tests
         run: /tmp/vim-themis/bin/themis
