@@ -210,7 +210,7 @@ def GetPumPos(d: number = 1): any
       pos: 'topleft',
       col: p % &columns,
       line: &lines + p / &columns - d - &cmdheight + 1,
-      fixed: true,
+      wrap: false,
     }
   else
     const c = getcurpos()
@@ -219,15 +219,8 @@ def GetPumPos(d: number = 1): any
       pos: 'topleft',
       col: p.col,
       line: min([p.row + d, &lines]),
-      fixed: true,
+      wrap: false,
     }
-  endif
-enddef
-
-def FixPumPos(a: any, w: number)
-  if &columns < a.col + w
-    a.pos = a.pos->substitute('left', 'right', '')
-    a.col = &columns
   endif
 enddef
 # }}}
@@ -558,7 +551,6 @@ def UpdateColoredMidasi(timer: number)
       col: pum_midasi_pos.col,
       line: pum_midasi_pos.line,
     }
-    FixPumPos(p, strdisplaywidth(t))
     popup_move(pum_midasi, p)
     setbufline(winbufnr(pum_midasi), 1, t)
   endif
@@ -908,6 +900,7 @@ def PopupKouho(default: number = 0)
     line: 'cursor+1',
     cursorline: true,
     maxheight: g:vim9skk.popup_maxheight,
+    wrap: false,
   }
   if mode() ==# 'c'
     pum_options.line = pum_midasi_pos.line - 1
@@ -916,17 +909,13 @@ def PopupKouho(default: number = 0)
     pum_options.line = 'cursor-1'
     pum_options.pos = 'botleft'
   endif
-  var width = 0
+  var lines = []
   for k in kouho
-    const w = strdisplaywidth(k)
-    if width < w
-      width = w
-    endif
+    const l = k->substitute(';', "\t", '')
+    lines += [l]
   endfor
-  FixPumPos(pum_options, width)
-  pum_winid = popup_create(kouho, pum_options)
+  pum_winid = popup_create(lines, pum_options)
   pum_kind = pum_kind_kouho
-  win_execute(pum_winid, ':%s/;/\t/g', 'silent!')
   win_execute(pum_winid, 'setlocal tabstop=12')
   win_execute(pum_winid, 'syntax match PMenuExtra /\t.*/')
   if default
