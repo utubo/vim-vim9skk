@@ -32,6 +32,9 @@ var recent_jisyo = {}
 var chain_jisyo = {}
 var pum_winid = 0
 var pum_kind = pum_kind_none
+var pum_midasi = 0
+var pum_midasi_update_timer = 0
+var pum_midasi_pos = {}
 var is_registering_user_jisyo = false
 
 var roman_table = {
@@ -199,6 +202,34 @@ def DoUserEvent(event: string)
     execute $'doautocmd User {event}'
   endif
 enddef
+
+def GetPumPos(d: number = 1): any
+  if mode() ==# 'c'
+    const p = getcmdscreenpos()
+    return {
+      pos: 'topleft',
+      col: p % &columns,
+      line: &lines + p / &columns - d - &cmdheight + 1,
+      fixed: true,
+    }
+  else
+    const c = getcurpos()
+    const p = screenpos(0, c[1], c[2])
+    return {
+      pos: 'topleft',
+      col: p.col,
+      line: min([p.row + d, &lines]),
+      fixed: true,
+    }
+  endif
+enddef
+
+def FixPumPos(a: any, w: number)
+  if &columns < a.col + w
+    a.pos = a.pos->substitute('left', 'right', '')
+    a.col = &columns
+  endif
+enddef
 # }}}
 
 # 表示制御 {{{
@@ -224,6 +255,7 @@ def Init()
     autocmd CmdlineLeave * OnCmdlineLeavePre()
     autocmd VimLeave  Sutocmd VimLeave * SaveRecentJisyo()
     autocmd CursorMovedI,CursorMovedC * FollowCursorModePum()
+    autocmd ColorScheme * ColorScheme()
   augroup END
   # ユーザー定義のローマ字入力を追加
   roman_table->extend(g:vim9skk.roman_table)
@@ -243,7 +275,12 @@ def Init()
   g:vim9skk.jisyo = expanded
   # その他初期化処理
   SetMode(mode_hira)
+  ColorScheme()
   initialized = true
+enddef
+
+def ColorScheme()
+  silent! hi default vim9skkMidasi cterm=underline gui=underline
 enddef
 
 export def Enable()
@@ -407,7 +444,10 @@ def SetSkkMode(s: number)
     skkmode = s
     MapMidasiMode()
     if s ==# skkmode_midasi
-      PopupMode(true)
+      PopupMode()
+      PopupColoredMidasi()
+    else
+      CloseColoredMidasi()
     endif
   endif
 enddef
@@ -460,7 +500,7 @@ enddef
 # }}}
 
 # 入力モードをポップアップ {{{
-def PopupMode(b: bool = false)
+def PopupMode()
   g:vim9skk_mode = g:vim9skk_enable
     ? skkmode ==# skkmode_midasi && mode.id !=# mode_abbr
     ? g:vim9skk.mode_label.midasi
@@ -471,27 +511,57 @@ def PopupMode(b: bool = false)
     redraw
     return
   endif
-  var a = GetModePumScreenPos()
+  var a = GetPumPos()
   if !g:vim9skk_enable
-    a.time = max([1, g:vim9skk.mode_label_timeout])
+    a.time = g:vim9skk.mode_label_timeout
   endif
   pum_winid = popup_create(g:vim9skk_mode, a)
   pum_kind = pum_kind_mode
 enddef
 
-def GetModePumScreenPos(): any
-  var a = {
-    col: mode() ==# 'c' ? getcmdscreenpos() : 'cursor',
-    line: mode() ==# 'c' ? (&lines - 1) : 'cursor+1',
-  }
-  return a
-enddef
-
 def FollowCursorModePum()
-  if !pum_winid || pum_kind !=# pum_kind_mode
+  if !pum_winid || pum_kind !=# pum_kind_mode || !g:vim9skk_enable
     return
   endif
-  popup_move(pum_winid, GetModePumScreenPos())
+  popup_move(pum_winid, GetPumPos())
+enddef
+# }}}
+
+# 変換対象を色付け {{{
+# TODO: 画面右端で表示がおかしい
+def PopupColoredMidasi()
+  if !pum_midasi
+    pum_midasi_pos = GetPumPos(0)
+    pum_midasi = popup_create('', pum_midasi_pos)
+    win_execute(pum_midasi, 'syntax match vim9skkMidasi /.*/')
+  endif
+  if !!pum_midasi_update_timer
+    timer_stop(pum_midasi_update_timer)
+  endif
+  pum_midasi_update_timer = timer_start(20, UpdateColoredMidasi, { repeat: - 1 })
+enddef
+
+def CloseColoredMidasi()
+  if !!pum_midasi
+    popup_close(pum_midasi)
+    pum_midasi = 0
+    timer_stop(pum_midasi_update_timer)
+    pum_midasi_update_timer = 0
+  endif
+enddef
+
+def UpdateColoredMidasi(timer: number)
+  if !!pum_midasi
+    const t = GetTarget()
+    var p = {
+      pos: pum_midasi_pos.pos,
+      col: pum_midasi_pos.col,
+      line: pum_midasi_pos.line,
+    }
+    FixPumPos(p, strdisplaywidth(t))
+    popup_move(pum_midasi, p)
+    setbufline(winbufnr(pum_midasi), 1, t)
+  endif
 enddef
 # }}}
 
@@ -833,15 +903,14 @@ def PopupKouho(default: number = 0)
   endif
   const target = GetTarget()
   var pum_options = {
-    col: screenpos(0, line('.'), start_pos).col,
-    line: 'cursor+1',
     pos: 'topleft',
+    col: pum_midasi_pos.col,
+    line: 'cursor+1',
     cursorline: true,
     maxheight: g:vim9skk.popup_maxheight,
   }
   if mode() ==# 'c'
-    pum_options.col = getcmdscreenpos() - strdisplaywidth(target)
-    pum_options.line = &lines - 1
+    pum_options.line = pum_midasi_pos.line - 1
     pum_options.pos = 'botleft'
   elseif &lines - g:vim9skk.popup_minheight < screenrow()
     pum_options.line = 'cursor-1'
@@ -854,7 +923,7 @@ def PopupKouho(default: number = 0)
       width = w
     endif
   endfor
-  pum_options.col = max([1, min([&columns - width, pum_options.col])])
+  FixPumPos(pum_options, width)
   pum_winid = popup_create(kouho, pum_options)
   pum_kind = pum_kind_kouho
   win_execute(pum_winid, ':%s/;/\t/g', 'silent!')
