@@ -1045,6 +1045,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     start_pos: start_pos,
     end_pos: end_pos,
     okuri: okuri,
+    pum_midasi_pos: pum_midasi_pos,
   }
   var result = []
   try
@@ -1069,6 +1070,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     start_pos = save.start_pos
     end_pos = save.end_pos
     okuri = save.okuri
+    pum_midasi_pos = save.pum_midasi_pos
     is_registering_user_jisyo = false
   endtry
   return result
