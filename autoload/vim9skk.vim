@@ -545,14 +545,9 @@ enddef
 
 def UpdateColoredMidasi(timer: number)
   if !!pum_midasi
-    const t = GetTarget()
-    var p = {
-      pos: pum_midasi_pos.pos,
-      col: pum_midasi_pos.col,
-      line: pum_midasi_pos.line,
-    }
-    popup_move(pum_midasi, p)
-    setbufline(winbufnr(pum_midasi), 1, t)
+    popup_close(pum_midasi)
+    pum_midasi = popup_create(GetTarget(), pum_midasi_pos)
+    win_execute(pum_midasi, 'syntax match vim9skkMidasi /.*/')
   endif
 enddef
 # }}}
