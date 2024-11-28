@@ -546,8 +546,11 @@ enddef
 def UpdateColoredMidasi(timer: number)
   if !!pum_midasi
     popup_close(pum_midasi)
-    pum_midasi = popup_create(GetTarget(), pum_midasi_pos)
-    win_execute(pum_midasi, 'syntax match vim9skkMidasi /.*/')
+    const t = GetTarget()
+    if !!t
+      pum_midasi = popup_create(GetTarget(), pum_midasi_pos)
+      win_execute(pum_midasi, 'syntax match vim9skkMidasi /.*/')
+    endif
   endif
 enddef
 # }}}
@@ -1029,7 +1032,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     start_pos: start_pos,
     end_pos: end_pos,
     okuri: okuri,
-    pum_midasi_pos: pum_midasi_pos,
+    pum_midasi_pos: pum_midasi_pos->deepcopy(),
   }
   var result = []
   try
