@@ -860,9 +860,10 @@ def Complete(chain: string = ''): string
   pos_delta = before->len() - after->len()
   RegisterToRecentJisyo(henkan_key, GetSelectedKouho())
   RegisterToChainJisyo(after)
-  TurnOffAbbr()
   kouho = []
   henkan_key = ''
+  ClosePum()
+  TurnOffAbbr()
   return chain ..
     after
       ->ReplaceTarget()
