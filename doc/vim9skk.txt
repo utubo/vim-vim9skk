@@ -30,6 +30,7 @@ INTERFACE			|vim9skk-interface|
   VARIABLES			  |vim9skk-variables|
   COMMANDS			  |vim9skk-commands|
   EVENTS			  |vim9skk-events|
+  HIGHLIGHTS			  |vim9skk-highlights|
 TODO				|vim9skk-todo|
 CHANGELOG			|vim9skk-changelog|
 
@@ -114,7 +115,7 @@ g:vim9skk					*g:vim9skk*
 		空文字を指定すると割り当て無しにできます
 		toggle
 			vim9skkのオンオフをトグルします
-			全角英数モードやabbrモードの場合は、ひらがなモードに切り替えます
+			全角英数モードやabbrevモードの場合は、ひらがなモードに切り替えます
 		enable
 			vim9skkを有効にします
 		disable
@@ -220,6 +221,17 @@ EVENTS						*vim9skk-events*
 	`g:vim9skk_mode`が変更されたときに発火します
 	`Vim9Disabled`や`Vim9Disabled`の前にも発火します
 
+------------------------------------------------------------------------------
+HIGHLIGHTS					*vim9skk-highlights*
+
+vim9skkMidasi		変換対象の色
+vim9skkModeOff		変換モードポップアップの色(vim9skkオフの場合)
+vim9skkModeHira		変換モードポップアップの色(ひらがな)
+vim9skkModeKata		変換モードポップアップの色(カタカナ)
+vim9skkModeHankaku	変換モードポップアップの色(半角)
+vim9skkModeAlphabet	変換モードポップアップの色(アルファベット)
+vim9skkModeAbbr		変換モードポップアップの色(abbrev)
+
 ==============================================================================
 TODO						*vim9skk-todo*
 
@@ -227,7 +239,7 @@ TODO						*vim9skk-todo*
 - [ ] 設定項目を整理する
 - [ ] 色を指定をできるようにする
 - [ ] 見出しモードじゃなくても予測変換を表示したい
-- [ ] 予測変換を連鎖させたい
+- [x] 予測変換を連鎖させたい
 
 
 ==============================================================================

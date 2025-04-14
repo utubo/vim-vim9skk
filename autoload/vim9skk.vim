@@ -274,6 +274,12 @@ enddef
 
 def ColorScheme()
   silent! hi default vim9skkMidasi cterm=underline gui=underline
+  silent! hi default link vim9skkModeOff PmenuExtra
+  silent! hi default link vim9skkModeHira PmenuSel
+  silent! hi default link vim9skkModeKata Pmenu
+  silent! hi default link vim9skkModeHankaku Pmenu
+  silent! hi default link vim9skkModeAlphabet Pmenu
+  silent! hi default link vim9skkModeAbbr Pmenu
 enddef
 
 export def Enable()
@@ -381,7 +387,8 @@ def CreateModeSettings(m: number): any
       id: mode_hira,
       label: g:vim9skk.mode_label.hira,
       use_roman: true,
-      items: roman_table_items
+      items: roman_table_items,
+      hi: 'vim9skkModeHira',
     }
   elseif m ==# mode_kata
     return {
@@ -389,7 +396,8 @@ def CreateModeSettings(m: number): any
       label: g:vim9skk.mode_label.kata,
       use_roman: true,
       items: roman_table_items
-        ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, kata_chars)])
+        ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, kata_chars)]),
+      hi: 'vim9skkModeKata',
     }
   elseif m ==# mode_hankaku
     return {
@@ -397,7 +405,8 @@ def CreateModeSettings(m: number): any
       label: g:vim9skk.mode_label.hankaku,
       use_roman: true,
       items: roman_table_items
-        ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, hankaku_chars)])
+        ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, hankaku_chars)]),
+      hi: 'vim9skkModeHankaku',
     }
   elseif m ==# mode_alphabet
     return {
@@ -405,14 +414,16 @@ def CreateModeSettings(m: number): any
       label: g:vim9skk.mode_label.alphabet,
       use_roman: false,
       items: abbr_chars
-        ->ToItems((i) => [i, i->ConvChars(abbr_chars, alphabet_chars)])
+        ->ToItems((i) => [i, i->ConvChars(abbr_chars, alphabet_chars)]),
+      hi: 'vim9skkModeAlphabet',
     }
   else
     return {
       id: mode_abbr,
       label: g:vim9skk.mode_label.abbr,
       use_roman: false,
-      items: abbr_chars->ToItems((i) => [i, i])
+      items: abbr_chars->ToItems((i) => [i, i]),
+      hi: 'vim9skkModeAbbr',
     }
   endif
 enddef
@@ -509,6 +520,7 @@ def PopupMode()
     a.time = g:vim9skk.mode_label_timeout
   endif
   pum_winid = popup_create(g:vim9skk_mode, a)
+  win_execute(pum_winid, $'syntax match {g:vim9skk_enable ? mode.hi : 'vim9skkModeOff'} /.*/')
   pum_kind = pum_kind_mode
 enddef
 
