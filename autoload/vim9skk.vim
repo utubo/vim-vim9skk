@@ -505,6 +505,10 @@ enddef
 
 # 入力モードをポップアップ {{{
 def PopupMode()
+  # TODO: タイマーはさまないとcmdlineで表示されない…要調査
+  timer_start(1, PopupModeImpl)
+enddef
+def PopupModeImpl(timer: number = 0)
   g:vim9skk_mode = g:vim9skk_enable
     ? skkmode ==# skkmode_midasi && mode.id !=# mode_abbr
     ? g:vim9skk.mode_label.midasi
