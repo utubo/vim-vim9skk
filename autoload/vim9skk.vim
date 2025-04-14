@@ -276,7 +276,7 @@ def ColorScheme()
   silent! hi default vim9skkMidasi cterm=underline gui=underline
   silent! hi default link vim9skkModeOff PmenuExtra
   silent! hi default link vim9skkModeHira PmenuSel
-  silent! hi default link vim9skkModeKata Pmenu
+  silent! hi default link vim9skkModeKata PmenuMatchSel
   silent! hi default link vim9skkModeHankaku Pmenu
   silent! hi default link vim9skkModeAlphabet Pmenu
   silent! hi default link vim9skkModeAbbr Pmenu
