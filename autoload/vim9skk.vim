@@ -366,6 +366,7 @@ enddef
 
 def OnCmdlineLeavePre()
   if g:vim9skk_enable
+    ToDirectMode()
     CloseKouho()
     TurnOffAbbr()
   endif
