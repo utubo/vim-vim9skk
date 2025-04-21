@@ -246,7 +246,7 @@ def Init()
     autocmd InsertLeavePre * OnInsertLeavePre()
     autocmd CmdlineEnter * OnCmdlineEnter()
     autocmd CmdlineLeave * OnCmdlineLeavePre()
-    autocmd VimLeave  Sutocmd VimLeave * SaveRecentJisyo()
+    autocmd VimLeave * SaveRecentJisyo()
     autocmd CursorMovedI,CursorMovedC * FollowCursorModePum()
     autocmd ColorScheme * ColorScheme()
   augroup END
