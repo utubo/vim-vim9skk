@@ -154,6 +154,12 @@ g:vim9skk					*g:vim9skk*
 	roman_table
 		ローマ字入力の追加・上書き設定です
 		例: `{ kn: 'かん' }`
+	change_popuppos
+		ポップアップの表示を微調整するfuncrefです
+		微調整したい場合は以下の関数を用意し
+		foo(pos: any): any
+		pos.colとpos.lineを再設定して返却して
+		ください
 
 	デフォルト
 >
