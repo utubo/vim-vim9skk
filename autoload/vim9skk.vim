@@ -560,6 +560,7 @@ def CloseColoredMidasi()
   endif
 enddef
 
+var latest_target = ''
 def UpdateColoredMidasi(timer: number)
   if !!pum_midasi
     popup_close(pum_midasi)
@@ -567,6 +568,14 @@ def UpdateColoredMidasi(timer: number)
     if !!t
       pum_midasi = popup_create(GetTarget(), pum_midasi_pos)
       win_execute(pum_midasi, 'syntax match vim9skkMidasi /.*/')
+    endif
+    if latest_target !=# t
+      if !t
+        PopupMode()
+      else
+        ShowRecent(t)
+      endif
+      latest_target = t
     endif
   endif
 enddef
