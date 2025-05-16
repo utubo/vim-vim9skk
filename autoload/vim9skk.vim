@@ -204,25 +204,34 @@ def DoUserEvent(event: string)
 enddef
 
 def GetPumPos(d: number = 1): any
+  var pp = {}
   if mode() ==# 'c'
     const p = getcmdscreenpos()
-    return {
-      pos: 'topleft',
+    pp = {
       col: p % &columns,
       line: &lines + p / &columns - d - &cmdheight + 1,
-      wrap: false,
     }
   else
     const c = getcurpos()
     const p = screenpos(0, c[1], c[2])
-    return {
-      pos: 'topleft',
+    pp = {
       col: p.col,
       line: min([p.row + d, &lines]),
-      wrap: false,
     }
   endif
+  pp = g:vim9skk.change_popuppos(pp)
+  return {
+    pos: 'topleft',
+    col: pp.col,
+    line: pp.line,
+    wrap: false,
+  }
 enddef
+
+export def NoChangePopupPos(popup_pos: any): any
+  return popup_pos
+enddef
+
 # }}}
 
 # 表示制御 {{{
@@ -919,10 +928,11 @@ def PopupKouho(default: number = 0)
     return
   endif
   const target = GetTarget()
+  const sp = screenpos(0, line('.'), col('.'))
   var pum_options = {
     pos: 'topleft',
     col: pum_midasi_pos.col,
-    line: 'cursor+1',
+    line: sp.row + 1,
     cursorline: true,
     maxheight: g:vim9skk.popup_maxheight,
     wrap: false,
@@ -931,7 +941,7 @@ def PopupKouho(default: number = 0)
     pum_options.line = pum_midasi_pos.line - 1
     pum_options.pos = 'botleft'
   elseif &lines - g:vim9skk.popup_minheight < screenrow()
-    pum_options.line = 'cursor-1'
+    pum_options.line = sp.row - 1
     pum_options.pos = 'botleft'
   endif
   var lines = []
