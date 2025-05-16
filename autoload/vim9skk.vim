@@ -1036,7 +1036,7 @@ def IconvFrom(str: string, enc: string): string
   return (!str || !enc || enc ==# &enc) ? str : str->iconv(enc, &enc)
 enddef
 
-def ReadJisyo(path: string): dict<any>
+export def ReadJisyo(path: string): dict<any>
   # キャッシュ済み
   if jisyo->has_key(path)
     return jisyo[path]

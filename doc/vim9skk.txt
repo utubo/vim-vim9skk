@@ -42,7 +42,7 @@ INTRODUCTION					*vim9skk-introduction*
 `CursorMovedC`を利用しています(9.1.766以降で動作確認済みです)
 
 Latest version:
-https://github.com/utubo/vim9skk.vim
+https://github.com/utubo/vim-vim9skk.vim
 
 
 ==============================================================================
