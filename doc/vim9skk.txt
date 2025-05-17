@@ -29,6 +29,7 @@ USAGE				|vim9skk-usage|
 INTERFACE			|vim9skk-interface|
   VARIABLES			  |vim9skk-variables|
   COMMANDS			  |vim9skk-commands|
+  FUNCTIONS			  |vim9skk-functions|
   EVENTS			  |vim9skk-events|
   HIGHLIGHTS			  |vim9skk-highlights|
 TODO				|vim9skk-todo|
@@ -216,18 +217,35 @@ COMMANDS					*vim9skk-commands*
 
 
 ------------------------------------------------------------------------------
+FUNCTIONS					*vim9skk-functions*
+
+vim9skk#Enable()				*vim9skkEnable*
+	vim9skkを有効にします
+
+vim9skk#Disable()				*vim9skkDisable*
+	vim9skkを無効にします
+
+vim9skk#Toggle()				*vim9skkToggle*
+	有効・無効を切り替えます
+
+vim9skk#ReadJisyo({パス})			*vim9skkReadJisyo*
+	パスで指定した辞書を読み込み、
+	{ line: list<string>, enc: string }
+	をreturnします
+
+------------------------------------------------------------------------------
 EVENTS						*vim9skk-events*
 
-:Vim9skkInitPre					*:Vim9skkInitPre*
+:Vim9skkInitPre					*Vim9skkInitPre*
 	vim9skkが初めて有効になり初期化される前に発火します
 
-:Vim9skkEnter					*:Vim9skkEnter*
+:Vim9skkEnter					*Vim9skkEnter*
 	`g:vim9skk_mode`が有効になったときに発火します
 
-:Vim9skkLever					*:Vim9skkLeave*
+:Vim9skkLever					*Vim9skkLeave*
 	`g:vim9skk_mode`が無効になったときに発火します
 
-:Vim9skkModeChanged				*:Vim9skkModeChanged*
+:Vim9skkModeChanged				*Vim9skkModeChanged*
 	`g:vim9skk_mode`が変更されたときに発火します
 	`Vim9Disabled`や`Vim9Disabled`の前にも発火します
 
