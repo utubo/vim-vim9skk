@@ -910,6 +910,7 @@ enddef
 def AfterComplete(chain: string): string
   ShowChainJisyo()
   if !kouho
+    CloseKouho()
     PopupMode()
   endif
   return chain
