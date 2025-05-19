@@ -533,8 +533,8 @@ def PopupModeImpl(timer: number = 0)
   if !g:vim9skk_enable
     a.time = g:vim9skk.mode_label_timeout
   endif
+  a.highlight = g:vim9skk_enable ? mode.hi : 'vim9skkModeOff'
   pum_winid = popup_create(g:vim9skk_mode, a)
-  win_execute(pum_winid, $'syntax match {g:vim9skk_enable ? mode.hi : 'vim9skkModeOff'} /.*/')
   pum_kind = pum_kind_mode
 enddef
 
@@ -551,8 +551,8 @@ enddef
 def PopupColoredMidasi()
   if !pum_midasi
     pum_midasi_pos = GetPumPos(0)
+    pum_midasi_pos.highlight = 'vim9skkMidasi'
     pum_midasi = popup_create('', pum_midasi_pos)
-    win_execute(pum_midasi, 'syntax match vim9skkMidasi /.*/')
   endif
   if !!pum_midasi_update_timer
     timer_stop(pum_midasi_update_timer)
@@ -576,7 +576,6 @@ def UpdateColoredMidasi(timer: number)
     const t = GetTarget()
     if !!t
       pum_midasi = popup_create(GetTarget(), pum_midasi_pos)
-      win_execute(pum_midasi, 'syntax match vim9skkMidasi /.*/')
     endif
     if latest_target !=# t
       if !t
