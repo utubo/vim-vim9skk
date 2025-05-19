@@ -11,9 +11,9 @@ const skkmode_direct = 0
 const skkmode_midasi = 1
 const skkmode_select = 2
 
-const pum_kind_none = 0
-const pum_kind_mode = 1
-const pum_kind_kouho = 2
+const popupwin_kind_none = 0
+const popupwin_kind_mode = 1
+const popupwin_kind_kouho = 2
 
 var initialized = false
 var mode = { id: mode_hira, use_roman: true, items: [] }
@@ -30,11 +30,11 @@ var last_word = ''
 var jisyo = {}
 var recent_jisyo = {}
 var chain_jisyo = {}
-var pum_winid = 0
-var pum_kind = pum_kind_none
-var pum_midasi = 0
-var pum_midasi_update_timer = 0
-var pum_midasi_pos = {}
+var popupwin_winid = 0
+var popupwin_kind = popupwin_kind_none
+var popupwin_midasi = 0
+var popupwin_midasi_update_timer = 0
+var popupwin_midasi_pos = {}
 var is_registering_user_jisyo = false
 
 var roman_table = {
@@ -203,7 +203,7 @@ def DoUserEvent(event: string)
   endif
 enddef
 
-def GetPumPos(d: number = 1): any
+def GetPopupWinPos(d: number = 1): any
   var pp = {}
   if mode() ==# 'c'
     const p = getcmdscreenpos()
@@ -235,11 +235,11 @@ enddef
 # }}}
 
 # 表示制御 {{{
-def ClosePum()
-  if !!pum_winid
-    popup_close(pum_winid)
-    pum_winid = 0
-    pum_kind = pum_kind_none
+def ClosePopupWin()
+  if !!popupwin_winid
+    popup_close(popupwin_winid)
+    popupwin_winid = 0
+    popupwin_kind = popupwin_kind_none
     kouho_index = -1
   endif
 enddef
@@ -256,7 +256,7 @@ def Init()
     autocmd CmdlineEnter * OnCmdlineEnter()
     autocmd CmdlineLeave * OnCmdlineLeavePre()
     autocmd VimLeave * SaveRecentJisyo()
-    autocmd CursorMovedI,CursorMovedC * FollowCursorModePum()
+    autocmd CursorMovedI,CursorMovedC * FollowCursorModePopupWin()
     autocmd ColorScheme * ColorScheme()
   augroup END
   # ユーザー定義のローマ字入力を追加
@@ -365,7 +365,7 @@ def OnCmdlineEnter()
   elseif getcmdtype() ==# ':'
     Disable(false)
   else
-    ClosePum()
+    ClosePopupWin()
     redraw
   endif
   if g:vim9skk_enable
@@ -524,58 +524,58 @@ def PopupModeImpl(timer: number = 0)
     ? g:vim9skk.mode_label.midasi
     : mode.label
     : g:vim9skk.mode_label.off
-  ClosePum()
+  ClosePopupWin()
   if !g:vim9skk_mode
     redraw
     return
   endif
-  var a = GetPumPos()
+  var a = GetPopupWinPos()
   if !g:vim9skk_enable
     a.time = g:vim9skk.mode_label_timeout
   endif
   a.highlight = g:vim9skk_enable ? mode.hi : 'vim9skkModeOff'
-  pum_winid = popup_create(g:vim9skk_mode, a)
-  pum_kind = pum_kind_mode
+  popupwin_winid = popup_create(g:vim9skk_mode, a)
+  popupwin_kind = popupwin_kind_mode
 enddef
 
-def FollowCursorModePum()
-  if !pum_winid || pum_kind !=# pum_kind_mode || !g:vim9skk_enable
+def FollowCursorModePopupWin()
+  if !popupwin_winid || popupwin_kind !=# popupwin_kind_mode || !g:vim9skk_enable
     return
   endif
-  popup_move(pum_winid, GetPumPos())
+  popup_move(popupwin_winid, GetPopupWinPos())
 enddef
 # }}}
 
 # 変換対象を色付け {{{
 # TODO: 画面右端で表示がおかしい
 def PopupColoredMidasi()
-  if !pum_midasi
-    pum_midasi_pos = GetPumPos(0)
-    pum_midasi_pos.highlight = 'vim9skkMidasi'
-    pum_midasi = popup_create('', pum_midasi_pos)
+  if !popupwin_midasi
+    popupwin_midasi_pos = GetPopupWinPos(0)
+    popupwin_midasi_pos.highlight = 'vim9skkMidasi'
+    popupwin_midasi = popup_create('', popupwin_midasi_pos)
   endif
-  if !!pum_midasi_update_timer
-    timer_stop(pum_midasi_update_timer)
+  if !!popupwin_midasi_update_timer
+    timer_stop(popupwin_midasi_update_timer)
   endif
-  pum_midasi_update_timer = timer_start(20, UpdateColoredMidasi, { repeat: - 1 })
+  popupwin_midasi_update_timer = timer_start(20, UpdateColoredMidasi, { repeat: - 1 })
 enddef
 
 def CloseColoredMidasi()
-  if !!pum_midasi
-    popup_close(pum_midasi)
-    pum_midasi = 0
-    timer_stop(pum_midasi_update_timer)
-    pum_midasi_update_timer = 0
+  if !!popupwin_midasi
+    popup_close(popupwin_midasi)
+    popupwin_midasi = 0
+    timer_stop(popupwin_midasi_update_timer)
+    popupwin_midasi_update_timer = 0
   endif
 enddef
 
 var latest_target = ''
 def UpdateColoredMidasi(timer: number)
-  if !!pum_midasi
-    popup_close(pum_midasi)
+  if !!popupwin_midasi
+    popup_close(popupwin_midasi)
     const t = GetTarget()
     if !!t
-      pum_midasi = popup_create(GetTarget(), pum_midasi_pos)
+      popupwin_midasi = popup_create(GetTarget(), popupwin_midasi_pos)
     endif
     if latest_target !=# t
       if !t
@@ -896,7 +896,7 @@ def Complete(chain: string = ''): string
   RegisterToChainJisyo(after)
   kouho = []
   henkan_key = ''
-  ClosePum()
+  ClosePopupWin()
   TurnOffAbbr()
   return chain ..
     after
@@ -919,7 +919,7 @@ enddef
 # 候補をポップアップ {{{
 def PopupKouho(default: number = 0)
   MapSelectMode(!!kouho)
-  ClosePum()
+  ClosePopupWin()
   if !kouho
     redraw
     return
@@ -929,30 +929,30 @@ def PopupKouho(default: number = 0)
   endif
   const target = GetTarget()
   const sp = screenpos(0, line('.'), col('.'))
-  var pum_options = {
+  var popupwin_options = {
     pos: 'topleft',
-    col: pum_midasi_pos.col,
+    col: popupwin_midasi_pos.col,
     line: sp.row + 1,
     cursorline: true,
     maxheight: g:vim9skk.popup_maxheight,
     wrap: false,
   }
   if mode() ==# 'c'
-    pum_options.line = pum_midasi_pos.line - 1
-    pum_options.pos = 'botleft'
+    popupwin_options.line = popupwin_midasi_pos.line - 1
+    popupwin_options.pos = 'botleft'
   elseif &lines - g:vim9skk.popup_minheight < screenrow()
-    pum_options.line = sp.row - 1
-    pum_options.pos = 'botleft'
+    popupwin_options.line = sp.row - 1
+    popupwin_options.pos = 'botleft'
   endif
   var lines = []
   for k in kouho
     const l = k->substitute(';', "\t", '')
     lines += [l]
   endfor
-  pum_winid = popup_create(lines, pum_options)
-  pum_kind = pum_kind_kouho
-  win_execute(pum_winid, 'setlocal tabstop=12')
-  win_execute(pum_winid, 'syntax match PMenuExtra /\t.*/')
+  popupwin_winid = popup_create(lines, popupwin_options)
+  popupwin_kind = popupwin_kind_kouho
+  win_execute(popupwin_winid, 'setlocal tabstop=12')
+  win_execute(popupwin_winid, 'syntax match PMenuExtra /\t.*/')
   if default
     kouho_index = default
   endif
@@ -960,16 +960,16 @@ def PopupKouho(default: number = 0)
 enddef
 
 def HighlightKouho()
-  if pum_winid !=# 0
-    win_execute(pum_winid, $':{kouho_index + 1}')
-    popup_setoptions(pum_winid, { cursorline: 0 <= kouho_index })
+  if popupwin_winid !=# 0
+    win_execute(popupwin_winid, $':{kouho_index + 1}')
+    popup_setoptions(popupwin_winid, { cursorline: 0 <= kouho_index })
     redraw
   endif
 enddef
 
 def CloseKouho()
   MapSelectMode(false)
-  ClosePum()
+  ClosePopupWin()
   redraw
 enddef
 # }}}
@@ -1069,7 +1069,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     start_pos: start_pos,
     end_pos: end_pos,
     okuri: okuri,
-    pum_midasi_pos: pum_midasi_pos->deepcopy(),
+    popupwin_midasi_pos: popupwin_midasi_pos->deepcopy(),
   }
   var result = []
   try
@@ -1094,7 +1094,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     start_pos = save.start_pos
     end_pos = save.end_pos
     okuri = save.okuri
-    pum_midasi_pos = save.pum_midasi_pos
+    popupwin_midasi_pos = save.popupwin_midasi_pos
     is_registering_user_jisyo = false
   endtry
   return result
