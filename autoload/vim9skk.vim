@@ -639,6 +639,7 @@ def MapDirectMode()
       maparg(key, 'c', false, true),
     ]
   endfor
+  MapFunction(g:vim9skk.keymap.disable,  'Disable()')
   MapFunction(g:vim9skk.keymap.kata,     'ToggleMode(MODE_KATA)')
   MapFunction(g:vim9skk.keymap.hankaku,  'ToggleMode(MODE_HANK)')
   MapFunction(g:vim9skk.keymap.alphabet, 'ToggleMode(MODE_ALPH)')

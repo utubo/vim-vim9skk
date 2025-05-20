@@ -67,9 +67,3 @@ Map('noremap!', g:vim9skk.keymap.toggle, '<Plug>(vim9skk-toggle)')
 Map('tnoremap', g:vim9skk.keymap.toggle, '<ScriptCmd>Vim9skkTerminalInput<CR>')
 Map('noremap!', g:vim9skk.keymap.enable, '<Plug>(vim9skk-enable)')
 
-augroup vim9skk_start
-  au!
-  au User Vim9skkEnter Map('noremap!', g:vim9skk.keymap.disable, '<Plug>(vim9skk-disable)')
-  au User Vim9skkLeave silent! execute $'unmap g:vim9skk.keymap.disable'
-augroup END
-
