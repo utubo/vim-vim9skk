@@ -306,9 +306,9 @@ export def Enable()
   DoUserEvent('Vim9skkEnter')
 enddef
 
-export def Disable(popup_even_off: bool = true)
+export def Disable(popup_even_off: bool = true): string
   if !g:vim9skk_enable
-    return
+    return ''
   endif
   if skkmode !=# SKKMODE_DIRECT
     Complete()->feedkeys('nit')
@@ -319,6 +319,7 @@ export def Disable(popup_even_off: bool = true)
   PopupMode()
   DoUserEvent('Vim9skkModeChanged')
   DoUserEvent('Vim9skkLeave')
+  return ''
 enddef
 
 export def ToggleSkk()
@@ -600,7 +601,9 @@ enddef
 
 def MapFunction(keys: any, f: string, enable: bool = true)
   for key in type(keys) ==# v:t_string ? [keys] : keys
-    if enable
+    if !key
+      # nop
+    elseif enable
       # 選択モードのxや全英モードのLに対応するための面倒なif文
       if skkmode ==# SKKMODE_SELECT || mode.use_roman || abbr_chars->Excludes(key)
         const nowait = len(key) ==# 1 ? '<nowait>' : ''
