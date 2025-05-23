@@ -516,10 +516,6 @@ enddef
 
 # 入力モードをポップアップ {{{
 def PopupMode()
-  # TODO: タイマーはさまないとcmdlineで表示されない…要調査
-  timer_start(1, PopupModeImpl)
-enddef
-def PopupModeImpl(timer: number = 0)
   g:vim9skk_mode = g:vim9skk_enable
     ? skkmode ==# SKKMODE_MIDASI && mode.id !=# MODE_ABBR
     ? g:vim9skk.mode_label.midasi
@@ -537,6 +533,7 @@ def PopupModeImpl(timer: number = 0)
   a.highlight = g:vim9skk_enable ? mode.hi : 'vim9skkModeOff'
   popupwin_winid = popup_create(g:vim9skk_mode, a)
   popupwin_kind = POPUPWIN_KIND_MODE
+  redraw
 enddef
 
 def FollowCursorModePopupWin()
