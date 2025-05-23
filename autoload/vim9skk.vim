@@ -733,14 +733,15 @@ enddef
 
 # 大文字入力時(Upper)
 def U(key: string): string
-  # 選択モードなら確定して見出しをセットする
+  # 選択モードなら確定する
+  var comp = ''
   if skkmode ==# SKKMODE_SELECT
-    return Complete() .. key
+    comp = Complete()
   endif
-  const target = GetTarget()
   # 直接入力なら見出しモードへ遷移する
+  const target = GetTarget()
   if skkmode ==# SKKMODE_DIRECT
-    return SetMidasi(key)
+    return comp .. SetMidasi(key)
   endif
   # 見出しモードなら…
   var prefix = ''
