@@ -468,25 +468,25 @@ def SetSkkMode(s: number)
 enddef
 
 def ToggleMode(m: number): string
+  # 基本はカタカナモードにするだけ
   if skkmode ==# SKKMODE_DIRECT
     SetMode(mode.id !=# m ? m : MODE_HIRA)
     return ''
-  else
-    # カタカナに変換して確定
-    const k_chars = m ==# MODE_KATA ? kata_chars : hankaku_chars
-    const mm = GetModeSettings(m)
-    const before = GetTarget()->RemoveMarker()
-    const after = before
-      ->SwapChars(hira_chars, k_chars)
-      ->ConvChars(kata_chars, k_chars)
-      ->SwapChars(alphabet_chars, abbr_chars)
-    RegisterToRecentJisyo(before, after)
-    CloseKouho()
-    return after
-      ->ReplaceTarget()
-      ->ToDirectMode()
-      ->PopupMode()
   endif
+  # 見出しや選択中ならカタカナに変換して確定する
+  CloseKouho()
+  const k_chars = m ==# MODE_KATA ? kata_chars : hankaku_chars
+  const mm = GetModeSettings(m)
+  const before = GetTarget()->RemoveMarker()
+  const after = before
+    ->SwapChars(hira_chars, k_chars)
+    ->ConvChars(kata_chars, k_chars)
+    ->SwapChars(alphabet_chars, abbr_chars)
+  RegisterToRecentJisyo(before, after)
+  return after
+    ->ReplaceTarget()
+    ->ToDirectMode()
+    ->PopupMode()
 enddef
 
 def ToggleAbbr(): string
