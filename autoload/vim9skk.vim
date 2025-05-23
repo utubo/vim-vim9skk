@@ -472,6 +472,7 @@ def ToggleMode(m: number): string
     SetMode(mode.id !=# m ? m : MODE_HIRA)
     return ''
   else
+    # カタカナに変換して確定
     const k_chars = m ==# MODE_KATA ? kata_chars : hankaku_chars
     const mm = GetModeSettings(m)
     const before = GetTarget()->RemoveMarker()
@@ -480,7 +481,11 @@ def ToggleMode(m: number): string
       ->ConvChars(kata_chars, k_chars)
       ->SwapChars(alphabet_chars, abbr_chars)
     RegisterToRecentJisyo(before, after)
-    return after->ReplaceTarget()->ToDirectMode()
+    CloseKouho()
+    return after
+      ->ReplaceTarget()
+      ->ToDirectMode()
+      ->PopupMode()
   endif
 enddef
 
@@ -515,7 +520,7 @@ enddef
 # }}}
 
 # 入力モードをポップアップ {{{
-def PopupMode()
+def PopupMode(s: string = ''): string
   g:vim9skk_mode = g:vim9skk_enable
     ? skkmode ==# SKKMODE_MIDASI && mode.id !=# MODE_ABBR
     ? g:vim9skk.mode_label.midasi
@@ -524,7 +529,7 @@ def PopupMode()
   ClosePopupWin()
   if !g:vim9skk_mode
     redraw
-    return
+    return s
   endif
   var a = GetPopupWinPos()
   if !g:vim9skk_enable
@@ -534,6 +539,7 @@ def PopupMode()
   popupwin_winid = popup_create(g:vim9skk_mode, a)
   popupwin_kind = POPUPWIN_KIND_MODE
   redraw
+  return s
 enddef
 
 def FollowCursorModePopupWin()
