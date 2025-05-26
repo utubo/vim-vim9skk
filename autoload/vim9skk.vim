@@ -690,7 +690,8 @@ enddef
 
 def MapMidasiMode()
   if g:vim9skk_enable
-    const enable = skkmode !=# SKKMODE_DIRECT && !!g:vim9skk_midasi
+    const enable = skkmode !=# SKKMODE_DIRECT &&
+      (skkmode !=# SKKMODE_MIDASI || !!g:vim9skk_midasi)
     MapFunction(g:vim9skk.keymap.select,   'StartSelect()', enable)
     MapFunction(g:vim9skk.keymap.complete, 'Complete()', enable)
     MapFunction(g:vim9skk.keymap.cancel,   'Select(-kouho_index)->Complete()', enable)
