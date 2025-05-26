@@ -206,6 +206,9 @@ g:vim9skk					*g:vim9skk*
 		},
 <
 
+g:vim9skk_midasi				*g:vim9skk_midasi*
+	見出しモードの入力値
+
 ------------------------------------------------------------------------------
 COMMANDS					*vim9skk-commands*
 
@@ -239,18 +242,22 @@ vim9skk#ReadJisyo({パス})			*vim9skkReadJisyo*
 ------------------------------------------------------------------------------
 EVENTS						*vim9skk-events*
 
-:Vim9skkInitPre					*Vim9skkInitPre*
+Vim9skkInitPre					*Vim9skkInitPre*
 	vim9skkが初めて有効になり初期化される前に発火します
 
-:Vim9skkEnter					*Vim9skkEnter*
+Vim9skkEnter					*Vim9skkEnter*
 	`g:vim9skk_mode`が有効になったときに発火します
 
-:Vim9skkLever					*Vim9skkLeave*
+Vim9skkLever					*Vim9skkLeave*
 	`g:vim9skk_mode`が無効になったときに発火します
 
-:Vim9skkModeChanged				*Vim9skkModeChanged*
+Vim9skkModeChanged				*Vim9skkModeChanged*
 	`g:vim9skk_mode`が変更されたときに発火します
 	`Vim9Disabled`や`Vim9Disabled`の前にも発火します
+
+Vim9skkMidasiInput				*Vim9skkMidasiInput*
+	見出しモードで入力されたときに発火します
+	`g:vim9skk_mdasi`で見出しの入力値を取得できます
 
 ------------------------------------------------------------------------------
 HIGHLIGHTS					*vim9skk-highlights*

@@ -466,6 +466,7 @@ enddef
 def SetSkkMode(s: number)
   if skkmode !=# s
     skkmode = s
+    g:vim9skk_midasi = ''
     MapMidasiMode()
     if s ==# SKKMODE_MIDASI
       PopupMode()
@@ -741,6 +742,9 @@ export def L(chain: string): string
     feedkeys(v[-1], 'it')
     v = v[ : -2]
   endif
+  if skkmode ==# SKKMODE_MIDASI
+    timer_start(0, MidasiInput)
+  endif
   return prefix .. v
 enddef
 
@@ -767,6 +771,9 @@ def U(key: string): string
     okuri_pos = GetPos()
     prefix = g:vim9skk.marker_okuri
   endif
+  if skkmode ==# SKKMODE_MIDASI
+    timer_start(0, MidasiInput)
+  endif
   return prefix .. key->tolower()
 enddef
 
@@ -780,6 +787,11 @@ def SetMidasi(key: string = '', delta: number = 0): string
   endif
   start_pos = next_start_pos
   return key->tolower()
+enddef
+
+def MidasiInput(timer: number)
+  g:vim9skk_midasi = GetTarget()
+  DoUserEvent('Vim9skkMidasiInput')
 enddef
 
 def SetPrefix(): string
