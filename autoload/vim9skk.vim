@@ -670,7 +670,7 @@ def MapRoman()
   if mode.use_roman
     for k in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
       silent! execute $'unmap! <buffer> <script> {k->tolower()}'
-      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>U("{k}")->feedkeys("it")<CR><ScriptCmd>vim9skk#MidasiInput()<CR>'
+      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>U("{k}")->feedkeys("it")<CR>'
     endfor
   else
     # <nowait>でいけるかな？と思ったけど、ちゃんとunmapしないとテストが通らない
