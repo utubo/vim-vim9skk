@@ -690,7 +690,7 @@ enddef
 
 def MapMidasiMode()
   if g:vim9skk_enable
-    const enable = skkmode !=# SKKMODE_DIRECT
+    const enable = skkmode !=# SKKMODE_DIRECT && !!g:vim9skk_midasi
     MapFunction(g:vim9skk.keymap.select,   'StartSelect()', enable)
     MapFunction(g:vim9skk.keymap.complete, 'Complete()', enable)
     MapFunction(g:vim9skk.keymap.cancel,   'Select(-kouho_index)->Complete()', enable)
@@ -791,6 +791,7 @@ enddef
 
 def MidasiInput(timer: number)
   g:vim9skk_midasi = GetTarget()
+  MapMidasiMode()
   DoUserEvent('Vim9skkMidasiInput')
 enddef
 
@@ -817,11 +818,15 @@ def ReplaceTarget(after: string): string
   return "\<BS>"->repeat(strchars(GetTarget())) .. after
 enddef
 
-def StartSelect(): string
+def StartSelect(chain: string = ''): string
   if skkmode ==# SKKMODE_SELECT
     return Select(1)
   endif
-  GetTarget()->GetAllKouho()
+  const target = GetTarget()
+  if !target
+    return chain
+  endif
+  target->GetAllKouho()
   if !kouho
     CloseKouho()
     return ''
