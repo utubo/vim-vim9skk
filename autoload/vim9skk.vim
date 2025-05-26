@@ -458,7 +458,7 @@ enddef
 
 def RunOnMidasi(chain: string = ''): string
   if g:vim9skk.run_on_midasi
-    SetSkkMode(SKKMODE_MIDASI)
+    U('')
   endif
   return chain
 enddef
