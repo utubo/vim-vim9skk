@@ -39,6 +39,7 @@ var default = {
   },
   roman_table: {},
   change_popuppos: vim9skk#NoChangePopupPos,
+  run_on_midasi: false,
 }
 g:vim9skk = get(g:, 'vim9skk', {})
 g:vim9skk->extend(default, 'keep')

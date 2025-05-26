@@ -301,6 +301,7 @@ export def Enable()
   endif
   MapToBuf()
   ToDirectMode()
+  RunOnMidasi()
   PopupMode()
   DoUserEvent('Vim9skkModeChanged')
   DoUserEvent('Vim9skkEnter')
@@ -371,6 +372,7 @@ def OnCmdlineEnter()
   endif
   if g:vim9skk_enable
     ToDirectMode()
+    RunOnMidasi()
   endif
 enddef
 
@@ -454,6 +456,13 @@ def ToDirectMode(chain: string = '', delta: number = 0): string
   return chain
 enddef
 
+def RunOnMidasi(chain: string = ''): string
+  if g:vim9skk.run_on_midasi
+    SetSkkMode(SKKMODE_MIDASI)
+  endif
+  return chain
+enddef
+
 def SetSkkMode(s: number)
   if skkmode !=# s
     skkmode = s
@@ -486,6 +495,7 @@ def ToggleMode(m: number): string
   return after
     ->ReplaceTarget()
     ->ToDirectMode()
+    ->RunOnMidasi()
     ->PopupMode()
 enddef
 
@@ -912,6 +922,7 @@ def Complete(chain: string = ''): string
       ->AddLeftForParen(after)
       ->ToDirectMode(pos_delta)
       ->AfterComplete()
+      ->RunOnMidasi()
 enddef
 
 def AfterComplete(chain: string): string

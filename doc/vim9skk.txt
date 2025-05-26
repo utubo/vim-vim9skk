@@ -161,6 +161,9 @@ g:vim9skk					*g:vim9skk*
 		foo(pos: any): any
 		pos.colとpos.lineを増減させて返却して
 		ください
+	run_on_midasi
+		vim9skkが有効になったとき、変換が確定したときに
+		即座に見出しモードに移行します
 
 	デフォルト
 >
