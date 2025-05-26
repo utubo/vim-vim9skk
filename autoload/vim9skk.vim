@@ -670,7 +670,7 @@ def MapRoman()
   if mode.use_roman
     for k in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
       silent! execute $'unmap! <buffer> <script> {k->tolower()}'
-      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>U("{k}")->feedkeys("it")<CR>'
+      execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>U("{k}")->feedkeys("it")<CR><ScriptCmd>vim9skk#MidasiInput()<CR>'
     endfor
   else
     # <nowait>でいけるかな？と思ったけど、ちゃんとunmapしないとテストが通らない
@@ -742,10 +742,7 @@ export def L(chain: string): string
     feedkeys(v[-1], 'it')
     v = v[ : -2]
   endif
-  if skkmode ==# SKKMODE_MIDASI
-    timer_start(0, MidasiInput)
-  endif
-  return prefix .. v
+  return prefix .. v .. "\<ScriptCmd>vim9skk#MidasiInput()\<CR>"
 enddef
 
 # 大文字入力時(Upper)
@@ -771,9 +768,6 @@ def U(key: string): string
     okuri_pos = GetPos()
     prefix = g:vim9skk.marker_okuri
   endif
-  if skkmode ==# SKKMODE_MIDASI
-    timer_start(0, MidasiInput)
-  endif
   return prefix .. key->tolower()
 enddef
 
@@ -789,10 +783,12 @@ def SetMidasi(key: string = '', delta: number = 0): string
   return key->tolower()
 enddef
 
-def MidasiInput(timer: number)
-  g:vim9skk_midasi = GetTarget()
-  MapMidasiMode()
-  DoUserEvent('Vim9skkMidasiInput')
+export def MidasiInput()
+  if skkmode ==# SKKMODE_MIDASI
+    g:vim9skk_midasi = GetTarget()
+    MapMidasiMode()
+    DoUserEvent('Vim9skkMidasiInput')
+  endif
 enddef
 
 def SetPrefix(): string
