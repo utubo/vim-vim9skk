@@ -1174,6 +1174,7 @@ enddef
 
 export def RefreshJisyo()
   jisyo = {}
+  recent_jisyo = {}
   echo '辞書をリフレッシュしました'
 enddef
 # }}}
