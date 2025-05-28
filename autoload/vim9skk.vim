@@ -313,6 +313,7 @@ export def Disable(popup_even_off: bool = true): string
   endif
   if skkmode !=# SKKMODE_DIRECT
     Complete()->feedkeys('nit')
+    ToDirectMode()
   endif
   g:vim9skk_enable = false
   UnmapAll()
