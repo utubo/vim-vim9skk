@@ -1003,7 +1003,9 @@ enddef
 
 def CloseKouho()
   MapSelectMode(false)
-  ClosePopupWin()
+  if popupwin_kind ==# POPUPWIN_KIND_KOUHO
+    ClosePopupWin()
+  endif
   redraw
 enddef
 # }}}
