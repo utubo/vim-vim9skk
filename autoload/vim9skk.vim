@@ -20,7 +20,6 @@ var mode = { id: MODE_HIRA, use_roman: true, items: [] }
 var skkmode = SKKMODE_DIRECT
 var start_pos = 0
 var end_pos = 1
-var okuri_pos = 0
 var pos_delta = 0 # 確定前後のカーソル位置の差異
 var henkan_key = ''
 var okuri = ''
@@ -765,17 +764,16 @@ def U(key: string): string
   if !!sion && !!key
     # Shift押しっぱなしでもローマ字入力できるように頑張る
     prefix = repeat("\<BS>", sion->len()) .. sion
-  elseif !!target && !okuri_pos
+  elseif !!target && target->stridx(g:vim9skk.marker_okuri) ==# -1
     # 送り仮名マーカーを設置する
-    okuri_pos = GetPos()
     prefix = g:vim9skk.marker_okuri
+    # Note: <BS>などでマーカーが削除されることを考慮すると、送り仮名の位置を内部的に持つのは難しかった…
   endif
   return prefix .. key->tolower()
 enddef
 
 def SetMidasi(key: string = '', delta: number = 0): string
   SetSkkMode(SKKMODE_MIDASI)
-  okuri_pos = 0
   const next_start_pos = GetPos() - delta
   const next_word = GetLine()->matchstr($'\%{end_pos}c.*\%{next_start_pos}c')
   if !!next_word
