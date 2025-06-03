@@ -480,6 +480,13 @@ def SetSkkMode(s: number)
 enddef
 
 def ToggleMode(m: number): string
+  var target = ''
+  if skkmode ==# SKKMODE_MIDASI
+    target = GetTarget()
+    if !target
+      ToDirectMode()
+    endif
+  endif
   # 基本はカタカナモードにするだけ
   if skkmode ==# SKKMODE_DIRECT
     SetMode(mode.id !=# m ? m : MODE_HIRA)
@@ -489,7 +496,7 @@ def ToggleMode(m: number): string
   CloseKouho()
   const k_chars = m ==# MODE_KATA ? kata_chars : hankaku_chars
   const mm = GetModeSettings(m)
-  const before = GetTarget()->RemoveMarker()
+  const before = target->RemoveMarker()
   const after = before
     ->SwapChars(hira_chars, k_chars)
     ->ConvChars(kata_chars, k_chars)

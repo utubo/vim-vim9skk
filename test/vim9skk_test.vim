@@ -87,6 +87,18 @@ suite.TestToggleOffOnMidashiMode = () => {
     '見出しモード中にvim9skkをオフにしたら変換を確定すること'
   )
 }
+suite.TestToggleModeOnMidashiMode = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>A\<BS>qaq\<C-j>",
+    'ア',
+    '見出しモード中でも変換対象が空ならばモードを変更できること'
+  )
+  TestOnInsAndCmdline(
+    "\<C-j>A\<BS>La\<C-j>a\<C-j>",
+    'ａあ',
+    '見出しモード中でも変換対象が空ならばモードを変更できること'
+  )
+}
 
 suite.TestToKatakana = () => {
   TestOnInsAndCmdline(
