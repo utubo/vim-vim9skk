@@ -562,7 +562,6 @@ def FollowCursorModePopupWin()
   if skkmode ==# SKKMODE_MIDASI && !!start_pos
       const p = GetPos()
       if p < start_pos
-        g:a = { p: p, start_pos: start_pos }
         SetMidasi()
         FixPosColoredMidasi()
       endif

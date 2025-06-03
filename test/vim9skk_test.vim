@@ -23,7 +23,7 @@ suite.before_each = () => {
   normal! ggdG
 }
 
-def TestOnInsAndCmdline(keys: string, expect: string, msg: string = '')
+def TestOnInsAndCmdline(keys: any, expect: string, msg: string = '')
   feedkeys($"o{keys}\<Esc>", 'xt')
   assert.equals(getline('.'), expect, $'insert-mode: {msg}')
   feedkeys($":vim9 g:a = '{keys}'\<CR>", 'xt')
@@ -204,7 +204,7 @@ suite.TestKeepKatakana = () => {
 }
 # }}}
 
-# vim9skk {{{
+# その他 {{{
 suite.TestMuhenkan = () => {
   TestOnInsAndCmdline(
     "\<C-j>Ai\<Space>x\<CR>qAi\<Space>x\<CR>q\<C-j>",
@@ -220,5 +220,13 @@ suite.TestAutoKatakana = () => {
     '未登録の外来語をカタカナに変換できること'
   )
 }
+
+# suite.TestAutoKatakana = () => {
+#   TestOnInsAndCmdline(
+#     ["\<C-j>ai\<Left>", "Kanji\<Space>\<CR>\<C-j>"],
+#     'あ漢字い',
+#     '見出しモードでカーソルを開始位置より手前に移動させたら開始位置が再セットされること'
+#   )
+# }
 # }}}
 
