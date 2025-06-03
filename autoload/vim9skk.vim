@@ -255,7 +255,9 @@ def Init()
     autocmd CmdlineEnter * OnCmdlineEnter()
     autocmd CmdlineLeave * OnCmdlineLeavePre()
     autocmd VimLeave * SaveRecentJisyo()
-    autocmd CursorMovedI,CursorMovedC * FollowCursorModePopupWin()
+    # Note:
+    # 確定時の<BS>によるカーソル移動で発火すると色々面倒なのでSafeStateを挟む
+    autocmd CursorMovedI,CursorMovedC * autocmd SafeState * ++once FollowCursorModePopupWin()
     autocmd ColorScheme * ColorScheme()
   augroup END
   # ユーザー定義のローマ字入力を追加
@@ -557,6 +559,14 @@ def FollowCursorModePopupWin()
   if !popupwin_winid || popupwin_kind !=# POPUPWIN_KIND_MODE || !g:vim9skk_enable
     return
   endif
+  if skkmode ==# SKKMODE_MIDASI && !!start_pos
+      const p = GetPos()
+      if p < start_pos
+        g:a = { p: p, start_pos: start_pos }
+        SetMidasi()
+        FixPosColoredMidasi()
+      endif
+  endif
   popup_move(popupwin_winid, GetPopupWinPos())
 enddef
 # }}}
@@ -575,6 +585,14 @@ def PopupColoredMidasi()
   popupwin_midasi_update_timer = timer_start(20, UpdateColoredMidasi, { repeat: - 1 })
 enddef
 
+def FixPosColoredMidasi()
+  if !!popupwin_midasi
+    popupwin_midasi_pos = GetPopupWinPos(0)
+    popupwin_midasi_pos.highlight = 'vim9skkMidasi'
+    popup_move(popupwin_midasi, popupwin_midasi_pos)
+  endif
+enddef
+
 def CloseColoredMidasi()
   if !!popupwin_midasi
     popup_close(popupwin_midasi)
@@ -587,10 +605,12 @@ enddef
 var latest_target = ''
 def UpdateColoredMidasi(timer: number)
   if !!popupwin_midasi
-    popup_close(popupwin_midasi)
     const t = GetTarget()
     if !!t
-      popupwin_midasi = popup_create(GetTarget(), popupwin_midasi_pos)
+      popup_show(popupwin_midasi)
+      popup_settext(popupwin_midasi, GetTarget())
+    else
+      popup_hide(popupwin_midasi)
     endif
     if latest_target !=# t
       if !t
