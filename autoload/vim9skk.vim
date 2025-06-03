@@ -703,7 +703,7 @@ def MapRoman()
       execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>U("{k}")->feedkeys("it")<CR>'
     endfor
   else
-    # <nowait>でいけるかな？と思ったけど、ちゃんとunmapしないとテストが通らない
+    # テストを通すためにも、ちゃんとunmapする
     for [key, value] in roman_table_items
       const k = key->EscapeForMap()
       silent! execute $'unmap! <buffer> <script> {k}'
