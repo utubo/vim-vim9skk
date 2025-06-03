@@ -58,8 +58,8 @@ suite.TestHankaku = () => {
 
 suite.TestZenei = () => {
   TestOnInsAndCmdline(
-    "\<C-j>Laiueokattan\<C-j>a\<C-j>",
-    'ａｉｕｅｏｋａｔｔａｎあ',
+    "\<C-j>Laiueokattan ?_\<C-j>a\<C-j>",
+    'ａｉｕｅｏｋａｔｔａｎ　？＿あ',
     '全角英数を入力できること'
   )
 }

@@ -119,7 +119,7 @@ const alphabet_chars = ('０１２３４５６７８９' ..
 const abbr_chars = ('0123456789' ..
   'abcdefghijklmnopqrstuvwxyz' ..
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ' ..
-  '!"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
+  ' !"#$%&''()-^\@[;:],./\=~|`{+*}<>?_')->split('.\zs')
 # }}}
 
 # ユーティリティー {{{
