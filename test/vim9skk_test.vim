@@ -221,12 +221,12 @@ suite.TestAutoKatakana = () => {
   )
 }
 
-# suite.TestAutoKatakana = () => {
-#   TestOnInsAndCmdline(
-#     ["\<C-j>ai\<Left>", "Kanji\<Space>\<CR>\<C-j>"],
-#     'あ漢字い',
-#     '見出しモードでカーソルを開始位置より手前に移動させたら開始位置が再セットされること'
-#   )
-# }
+suite.TestAutoKatakana = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>ai\<BS>Kanji\<Space>\<CR>\<C-j>",
+    'あ漢字',
+    '見出しモードでカーソルを開始位置より手前に移動させたら開始位置が再セットされること'
+  )
+}
 # }}}
 
