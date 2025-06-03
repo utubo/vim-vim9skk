@@ -694,6 +694,10 @@ enddef
 
 def MapRoman()
   if mode.use_roman
+    for key in abbr_chars
+      const k = key->EscapeForMap()
+      silent! execute $'unmap! <buffer> <script> {k}'
+    endfor
     for k in 'ABCDEFGHIJKMNOPRSTUVWXYZ'->split('.\zs')
       silent! execute $'unmap! <buffer> <script> {k->tolower()}'
       execute $'map! <buffer> <script> <nowait> {k} <ScriptCmd>U("{k}")->feedkeys("it")<CR>'
