@@ -1160,6 +1160,9 @@ export def RegisterToUserJisyo(key: string): list<string>
     okuri = save.okuri
     popupwin_midasi_pos = save.popupwin_midasi_pos
     is_registering_user_jisyo = false
+    if !!popupwin_midasi
+      popup_move(popupwin_midasi, popupwin_midasi_pos)
+    endif
   endtry
   return result
 enddef
