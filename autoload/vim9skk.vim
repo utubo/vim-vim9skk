@@ -473,7 +473,7 @@ def SetSkkMode(s: number)
     if s ==# SKKMODE_MIDASI
       PopupMode()
       PopupColoredMidasi()
-    else
+    elseif s !=# SKKMODE_SELECT
       CloseColoredMidasi()
     endif
   endif
@@ -610,23 +610,28 @@ enddef
 
 var latest_target = ''
 def UpdateColoredMidasi(timer: number)
-  if !!popupwin_midasi
-    const t = GetTarget()
-    if !!t
-      popup_show(popupwin_midasi)
-      popup_settext(popupwin_midasi, GetTarget())
-    else
-      popup_hide(popupwin_midasi)
-    endif
-    if latest_target !=# t
-      if !t
-        PopupMode()
-      else
-        ShowRecent(t)
-      endif
-      latest_target = t
-    endif
+  if !popupwin_midasi
+    return
   endif
+  const t = GetTarget()
+  if !t
+    popup_hide(popupwin_midasi)
+  else
+    popup_show(popupwin_midasi)
+    popup_settext(popupwin_midasi, GetTarget())
+  endif
+  if skkmode ==# SKKMODE_SELECT
+    return
+  endif
+  if latest_target ==# t
+    return
+  endif
+  if !t
+    PopupMode()
+  else
+    ShowRecent(t)
+  endif
+  latest_target = t
 enddef
 # }}}
 
