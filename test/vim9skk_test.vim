@@ -231,15 +231,15 @@ suite.TestKeepKatakana = () => {
 # ユーザー辞書登録 {{{
 suite.TestCancelRegisterUserJisyo = () => {
   TestOnInsAndCmdline(
-    "\<C-j>sasisu\<Space>\<CR>\<Space>\<CR>\<C-j>",
-    'さしす',
+    "\<C-j>Sasisu\<Space>\<CR>a\<CR>\<C-j>",
+    'さしすあ',
     'ユーザー辞書への登録をキャンセルできること'
   )
 }
 
 suite.TestRegisterUserJisyo = () => {
   TestOnInsAndCmdline(
-    "\<C-j>sasisu\<Space>テスト\<CR>sasisu\<Space>\<C-j>",
+    "\<C-j>Kakikukeko\<Space>テスト\<CR>Kakikukeko\<Space>\<C-j>",
     'テストテスト',
     'ユーザー辞書に登録できること'
   )
