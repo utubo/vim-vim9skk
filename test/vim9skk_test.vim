@@ -5,17 +5,22 @@ const assert = themis#helper('assert')
 
 # テスト共通処理 {{{
 const jisyo_recent = tempname()
+const jisyo_user = tempname()
 g:vim9skk = {
   jisyo: [expand('<script>:p:h') .. '/SKK-JISYO.test'],
-  jisyo_recent: jisyo_recent }
+  jisyo_recent: jisyo_recent,
+  jisyo_user: jisyo_user
+}
 execute 'source' expand('<script>:p:h:h') .. '/plugin/vim9skk.vim'
 
 suite.before = () => {
   writefile([''], jisyo_recent)
+  writefile([''], jisyo_user)
 }
 
 suite.after = () => {
   silent! delete(jisyo_recent)
+  silent! delete(jisyo_user)
 }
 
 suite.before_each = () => {
@@ -24,8 +29,13 @@ suite.before_each = () => {
 }
 
 def TestOnInsAndCmdline(keys: any, expect: string, msg: string = '')
-  feedkeys($"o{keys}\<Esc>", 'xt')
-  assert.equals(getline('.'), expect, $'insert-mode: {msg}')
+  feedkeys($"i{keys}\<Esc>", 'xt')
+  assert.equals(getline(1, '$')->join("\n"), expect, $'insert-mode: {msg}')
+
+  writefile([''], jisyo_recent)
+  writefile([''], jisyo_user)
+  call vim9skk#RefreshJisyo()
+
   feedkeys($":vim9 g:a = '{keys}'\<CR>", 'xt')
   assert.equals(g:a, expect, $'cmdline: {msg}')
 enddef
@@ -214,6 +224,25 @@ suite.TestKeepKatakana = () => {
     'カタカナで変換したあともカタカナをキープすること'
   )
 }
+# }}}
+
+# ユーザー辞書登録 {{{
+suite.TestCancelRegisterUserJisyo = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>sasisu\<Space>\<CR>\<Space>\<CR>\<C-j>",
+    'さしす',
+    'ユーザー辞書への登録をキャンセルできること'
+  )
+}
+
+suite.TestRegisterUserJisyo = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>sasisu\<Space>テスト\<CR>sasisu\<Space>\<C-j>",
+    'テストテスト',
+    'ユーザー辞書に登録できること'
+  )
+}
+
 # }}}
 
 # その他 {{{

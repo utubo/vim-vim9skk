@@ -1082,6 +1082,8 @@ def ShowChainJisyo()
     kouho = chain_jisyo[last_word]->AddDetail('入力履歴')
     kouho_index = -1
     PopupKouho()
+  else
+    kouho = []
   endif
 enddef
 # }}}
