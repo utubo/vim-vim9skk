@@ -479,6 +479,14 @@ def SetSkkMode(s: number)
   endif
 enddef
 
+def ToggleMidasi(): string
+  if skkmode ==# SKKMODE_DIRECT
+    return U('')
+  else
+    return Complete()->ToDirectMode()->PopupMode()
+  endif
+enddef
+
 def ToggleMode(m: number): string
   var target = ''
   if skkmode ==# SKKMODE_MIDASI
@@ -693,6 +701,7 @@ def MapDirectMode()
   MapFunction(g:vim9skk.keymap.alphabet, 'ToggleMode(MODE_ALPH)')
   MapFunction(g:vim9skk.keymap.abbr,     'ToggleAbbr()')
   MapFunction(g:vim9skk.keymap.midasi,   'U("")') # 大文字を押したのと同じ
+  MapFunction(g:vim9skk.keymap.midasi_toggle, 'ToggleMidasi()')
   # leximaなどがinsertモードを解除してしまうので…
   noremap! <buffer> <script> <BS> <BS>
 enddef
@@ -1160,8 +1169,8 @@ export def RegisterToUserJisyo(key: string): list<string>
       echo '登録しました'
     endif
   finally
-    SetMode(save.mode_id)
-    SetSkkMode(save.skkmode)
+    noautocmd SetMode(save.mode_id)
+    noautocmd SetSkkMode(save.skkmode)
     start_pos = save.start_pos
     end_pos = save.end_pos
     okuri = save.okuri

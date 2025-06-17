@@ -29,6 +29,7 @@ var default = {
     alphabet: 'L',
     abbr: '/',
     midasi: 'Q',
+    midasi_toggle: [],
     select: '<Space>',
     next: '<Tab>',
     prev: ['<S-Tab>', 'x'],
