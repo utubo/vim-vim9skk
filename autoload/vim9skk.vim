@@ -473,7 +473,7 @@ def SetSkkMode(s: number)
     if s ==# SKKMODE_MIDASI
       PopupMode()
       PopupColoredMidasi()
-    elseif s !=# SKKMODE_SELECT
+    else
       CloseColoredMidasi()
     endif
   endif
