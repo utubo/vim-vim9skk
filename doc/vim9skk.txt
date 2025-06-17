@@ -219,7 +219,7 @@ COMMANDS					*vim9skk-commands*
 :Vim9skkTerminalInput				*:Vim9skkTerminalInput*
 	terminalに入力するための入力プロンプトを表示します
 
-:Vim9skkRefreshJisyo				*:Vim9skkRefreshJisyo*
+:Vim9skkReloadJisyo				*:Vim9skkReloadJisyo*
 	辞書を再読み込みします
 
 :Vim9skkRegisterToUserJisyo {見出し}		*:Vim9skkRegisterToUserJisyo*

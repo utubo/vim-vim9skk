@@ -1222,7 +1222,12 @@ def SaveRecentJisyo()
   endif
 enddef
 
+# duplicated
 export def RefreshJisyo()
+  ReloadJisyo()
+enddef
+
+export def ReloadJisyo()
   jisyo = {}
   recent_jisyo = {}
   echo '辞書をリフレッシュしました'
