@@ -1162,8 +1162,8 @@ export def RegisterToUserJisyo(key: string): list<string>
       # ユーザー辞書に登録する
       const newline = $'{key} /{value}/'
       var j = ReadJisyo(g:vim9skk.jisyo_user)
-      jisyo[g:vim9skk.jisyo_user] = j # ユーザー辞書ファイルが無い場合に備えてキャッシュを上書きする
-      jisyo[g:vim9skk.jisyo_user].lines += [newline->IconvTo(j.enc)]
+      j.lines += [newline->IconvTo(j.enc)]
+      jisyo[g:vim9skk.jisyo_user] = j
       [newline]->WriteJisyo(g:vim9skk.jisyo_user, 'a')
       result += [value]
       echo '登録しました'
