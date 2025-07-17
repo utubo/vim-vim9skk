@@ -263,6 +263,11 @@ Vim9skkMidasiInput				*Vim9skkMidasiInput*
 	見出しモードで入力されたときに発火します
 	`g:vim9skk_mdasi`で見出しの入力値を取得できます
 
+Vim9skkAbbrInput				*Vim9skkAbbrInput*
+	Abbrモードで入力されたときに発火します
+	`g:vim9skk_mdasi`で見出しの入力値を取得できます
+	(`g:vim9skk_abbr`の方がいいかな…検討中)
+
 ------------------------------------------------------------------------------
 HIGHLIGHTS					*vim9skk-highlights*
 

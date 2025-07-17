@@ -832,7 +832,11 @@ export def MidasiInput()
   if skkmode ==# SKKMODE_MIDASI
     g:vim9skk_midasi = GetTarget()
     MapMidasiMode()
-    DoUserEvent('Vim9skkMidasiInput')
+    if mode.id ==# MODE_ABBR
+      DoUserEvent('Vim9skkAbbrInput')
+    else
+      DoUserEvent('Vim9skkMidasiInput')
+    endif
   endif
 enddef
 
