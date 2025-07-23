@@ -749,6 +749,7 @@ def MapSelectMode(enable: bool)
   if g:vim9skk_enable
     MapFunction(g:vim9skk.keymap.next, 'Select(1)', enable)
     MapFunction(g:vim9skk.keymap.prev, 'Select(-1)', enable)
+    MapFunction(g:vim9skk.keymap.select_top, 'SelectTop()', enable)
   endif
 enddef
 
@@ -958,6 +959,13 @@ def Select(d: number): string
   SetSkkMode(SKKMODE_SELECT)
   kouho_index = Cyclic(kouho_index + d, len(kouho))
   HighlightKouho()
+  return ReplaceTarget($'{GetSelectedKouho()}{okuri}')
+enddef
+
+def SelectTop(): string
+  kouho_index = 0
+  # TODO: SafeStateを乱用すると後で絶対嵌る…
+  au vim9skk SafeState * ++once Complete()
   return ReplaceTarget($'{GetSelectedKouho()}{okuri}')
 enddef
 

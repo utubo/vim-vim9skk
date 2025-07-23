@@ -33,6 +33,7 @@ var default = {
     select: '<Space>',
     next: '<Tab>',
     prev: ['<S-Tab>', 'x'],
+    select_top: [],
     complete: '<CR>',
     cancel: '<C-g>',
     prefix: '>',

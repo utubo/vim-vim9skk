@@ -147,6 +147,8 @@ g:vim9skk					*g:vim9skk*
 			次の候補を選択します
 		prev
 			前の候補を選択します
+		select_top
+			先頭の候補で確定します
 		complete
 			変換を確定します
 			選択モードでない場合は無効です
