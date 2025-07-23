@@ -925,7 +925,7 @@ def GetAllKouho(target: string)
   # `▽ほげ*ふが`を見出しと送り仮名に分割する
   const [m, o] = target
     ->Split(g:vim9skk.marker_okuri)
-  kouho = [m] # 候補一つ目は無変換
+  kouho = [$'{m};無変換'] # 候補一つ目は無変換
   okuri = o # 送り仮名は候補選択時に使うのでスクリプトローカルに保持しておく
   # 候補を検索する
   const midasi_key = m->ConvChars(kata_chars, hira_chars)
@@ -951,8 +951,8 @@ def Cyclic(a: number, max: number): number
   return max ==# 0 ? 0 : ((a % max + max) % max)
 enddef
 
-def GetSelectedKouho(): string
-  return kouho->get(kouho_index, '')->substitute(';.*', '', '')
+def GetSelectedKouho(index: number = -1): string
+  return kouho->get(index < 0 ? kouho_index : index, '')->substitute(';.*', '', '')
 enddef
 
 def Select(d: number): string
@@ -963,10 +963,13 @@ def Select(d: number): string
 enddef
 
 def SelectTop(): string
-  kouho_index = 0
+  var k = GetSelectedKouho(0)
+  if get(kouho, 0, '')->stridx(';無変換') !=# -1 && 1 < len(kouho)
+    k = GetSelectedKouho(1)
+  endif
   # TODO: SafeStateを乱用すると後で絶対嵌る…
   au vim9skk SafeState * ++once Complete()
-  return ReplaceTarget($'{GetSelectedKouho()}{okuri}')
+  return ReplaceTarget($'{k}{okuri}')
 enddef
 
 def AddLeftForParen(chain: string, p: string): string
