@@ -490,6 +490,7 @@ def ToggleMidasi(): string
 enddef
 
 def ToggleMode(m: number): string
+  CloseKouho()
   var target = ''
   if skkmode ==# SKKMODE_MIDASI
     target = GetTarget()
@@ -503,7 +504,6 @@ def ToggleMode(m: number): string
     return ''
   endif
   # 見出しや選択中ならカタカナに変換して確定する
-  CloseKouho()
   const k_chars = m ==# MODE_KATA ? kata_chars : hankaku_chars
   const mm = GetModeSettings(m)
   const before = target->RemoveMarker()
@@ -551,6 +551,9 @@ enddef
 
 # 入力モードをポップアップ {{{
 def PopupMode(s: string = ''): string
+  if popupwin_kind !=# POPUPWIN_KIND_NONE && popupwin_kind !=# POPUPWIN_KIND_MODE
+    return s
+  endif
   g:vim9skk_mode = g:vim9skk_enable
     ? skkmode ==# SKKMODE_MIDASI && mode.id !=# MODE_ABBR
     ? g:vim9skk.mode_label.midasi
@@ -573,7 +576,7 @@ def PopupMode(s: string = ''): string
 enddef
 
 def FollowCursorModePopupWin()
-  if !popupwin_winid || popupwin_kind !=# POPUPWIN_KIND_MODE || !g:vim9skk_enable || skkmode ==# SKKMODE_SELECT
+  if !popupwin_winid || popupwin_kind !=# POPUPWIN_KIND_MODE || !g:vim9skk_enable
     return
   endif
   if skkmode ==# SKKMODE_MIDASI && !!start_pos
