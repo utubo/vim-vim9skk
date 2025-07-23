@@ -329,6 +329,7 @@ enddef
 export def ToggleSkk()
   if g:vim9skk_enable && !mode.use_roman
     SetMode(MODE_HIRA)
+    RunOnMidasi()
   elseif g:vim9skk_enable
     Disable()
   else
