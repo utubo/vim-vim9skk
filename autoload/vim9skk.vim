@@ -573,7 +573,7 @@ def PopupMode(s: string = ''): string
 enddef
 
 def FollowCursorModePopupWin()
-  if !popupwin_winid || popupwin_kind !=# POPUPWIN_KIND_MODE || !g:vim9skk_enable
+  if !popupwin_winid || popupwin_kind !=# POPUPWIN_KIND_MODE || !g:vim9skk_enable || skkmode ==# SKKMODE_SELECT
     return
   endif
   if skkmode ==# SKKMODE_MIDASI && !!start_pos
@@ -985,14 +985,13 @@ def Complete(chain: string = ''): string
       ->AddLeftForParen(after)
       ->ToDirectMode(pos_delta)
       ->AfterComplete()
-      ->RunOnMidasi()
 enddef
 
 def AfterComplete(chain: string): string
-  ShowChainJisyo()
-  if !kouho
-    CloseKouho()
-    PopupMode()
+  RunOnMidasi()
+  ListChainJisyo()
+  if !!kouho
+    PopupKouho()
   endif
   return chain
 enddef
@@ -1097,11 +1096,10 @@ def RegisterToChainJisyo(next_word: string)
   end_pos = start_pos + next_word->len()
 enddef
 
-def ShowChainJisyo()
+def ListChainJisyo()
   if chain_jisyo->has_key(last_word)
     kouho = chain_jisyo[last_word]->AddDetail('入力履歴')
     kouho_index = -1
-    PopupKouho()
   else
     kouho = []
   endif
