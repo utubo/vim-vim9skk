@@ -1011,9 +1011,11 @@ enddef
 
 def AfterComplete(pipe: string): string
   RunOnMidasi()
-  ListInputHist()
+  cands = ListInputHist()
   if !!cands
     PopupCands()
+    cands_index = -1
+    popup_setoptions(popup.id, { cursorline: false })
   endif
   return pipe
 enddef
@@ -1120,12 +1122,11 @@ def AddInputHist(next_word: string)
   end_pos = start_pos + next_word->len()
 enddef
 
-def ListInputHist()
+def ListInputHist(): list<string>
   if inputHist->has_key(last_word)
-    cands = inputHist[last_word]->AddDetail('入力履歴')
-    cands_index = -1
+    return inputHist[last_word]->AddDetail('入力履歴')
   else
-    cands = []
+    return []
   endif
 enddef
 # }}}
