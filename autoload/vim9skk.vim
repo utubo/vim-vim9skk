@@ -747,16 +747,16 @@ def MapMidasiMode()
       (mode !=# Mode.Midasi || !!g:vim9skk_midasi)
     MapFunction(g:vim9skk.keymap.select,   'StartSelect()', enable)
     MapFunction(g:vim9skk.keymap.complete, 'Complete()', enable)
-    MapFunction(g:vim9skk.keymap.cancel,   'SelectMuhen()', enable)
+    MapFunction(g:vim9skk.keymap.cancel,   'Select(0)->CompleteLazy()', enable)
     MapFunction(g:vim9skk.keymap.prefix,   'SetPrefix()', enable)
   endif
 enddef
 
 def MapSelectMode(enable: bool)
   if g:vim9skk_enable
-    MapFunction(g:vim9skk.keymap.next, 'Select(1)', enable)
-    MapFunction(g:vim9skk.keymap.prev, 'Select(-1)', enable)
-    MapFunction(g:vim9skk.keymap.select_top, 'SelectTop()', enable)
+    MapFunction(g:vim9skk.keymap.next, 'SelectBy(1)', enable)
+    MapFunction(g:vim9skk.keymap.prev, 'SelectBy(-1)', enable)
+    MapFunction(g:vim9skk.keymap.select_top, 'SelectTop()->CompleteLazy()', enable)
   endif
 enddef
 
@@ -874,7 +874,7 @@ enddef
 
 def StartSelect(pipe: string = ''): string
   if mode ==# Mode.Select
-    return Select(1)
+    return SelectBy(1)
   endif
   const target = GetTarget()
   if !target
@@ -887,7 +887,6 @@ def StartSelect(pipe: string = ''): string
   endif
   SetMode(Mode.Select)
   PopupCands(1)
-  cands_index = 0
   return Select(1)
 enddef
 
@@ -962,24 +961,22 @@ def GetSelectedCands(index: number = -1): string
   return cands->get(index < 0 ? cands_index : index, '')->substitute(';.*', '', '')
 enddef
 
-def Select(d: number): string
-  SetMode(Mode.Select)
-  cands_index = Cyclic(cands_index + d, len(cands))
+def Select(index: number): string
+  cands_index = Cyclic(index, len(cands))
   HighlightCands()
-  return ReplaceTarget($'{GetSelectedCands()}{okuri}')
+  return ReplaceTarget($'{GetSelectedCands(index)}{okuri}')
 enddef
 
-def SelectMuhen(): string
-  const k = GetSelectedCands(0)
-  return ReplaceTarget($'{k}{okuri}')->CompleteLazy()
+def SelectBy(d: number): string
+  return Select(cands_index + d)
 enddef
 
 def SelectTop(): string
-  var k = GetSelectedCands(0)
   if get(cands, 0, '')->stridx(';無変換') !=# -1 && 1 < len(cands)
-    k = GetSelectedCands(1)
+    return Select(1)
+  else
+    return Select(0)
   endif
-  return ReplaceTarget($'{k}{okuri}')->CompleteLazy()
 enddef
 
 def AddLeftForParen(pipe: string, p: string): string

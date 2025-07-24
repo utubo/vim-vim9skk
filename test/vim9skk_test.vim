@@ -244,11 +244,10 @@ suite.TestCancelRegisterUserJisyo = () => {
     'ユーザー辞書への登録をキャンセルできること'
   )
 }
-
 suite.TestRegisterUserJisyo = () => {
   TestOnInsAndCmdline(
     "\<C-j>Kakikukeko\<Space>テスト\<CR>Kakikukeko\<Space>\<C-j>",
-    'テストテスト',
+    'テスト',
     'ユーザー辞書に登録できること'
   )
 }
