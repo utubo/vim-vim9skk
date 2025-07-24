@@ -18,8 +18,8 @@ var mode = Mode.Direct
 var char = { type: CharType.Hira, use_roman: true, items: [] }
 
 var midasi = {
-  start: 0,
-  end: 1,
+  head: 0,
+  tail: 1,
   delta: 0, # 確定前後のカーソル位置の差異
 }
 
