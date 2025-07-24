@@ -459,19 +459,6 @@ def SetCharType(ct: CharType)
   silent! doautocmd User Vim9skkModeChanged
 enddef
 
-def ToDirectMode(pipe: string = '', delta: number = 0): string
-  SetMode(Mode.Direct)
-  start_pos = GetPos() - delta
-  return pipe
-enddef
-
-def RunOnMidasi(pipe: string = ''): string
-  if g:vim9skk.run_on_midasi
-    U('')
-  endif
-  return pipe
-enddef
-
 def SetMode(m: Mode)
   if mode !=# m
     mode = m
@@ -484,6 +471,19 @@ def SetMode(m: Mode)
       CloseColoredMidasi()
     endif
   endif
+enddef
+
+def ToDirectMode(pipe: string = '', delta: number = 0): string
+  SetMode(Mode.Direct)
+  start_pos = GetPos() - delta
+  return pipe
+enddef
+
+def RunOnMidasi(pipe: string = ''): string
+  if g:vim9skk.run_on_midasi
+    U('')
+  endif
+  return pipe
 enddef
 
 def ToggleMidasi(): string
@@ -1015,7 +1015,7 @@ def AfterComplete(pipe: string): string
 enddef
 # }}}
 
-# 候補をポップアップ {{{
+# 変換候補をポップアップ {{{
 def PopupCands(default: number = 0)
   MapSelectMode(!!cands)
   ClosePopupWin()
@@ -1105,7 +1105,7 @@ def ShowRecent(target: string)
 enddef
 # }}}
 
-# 入力履歴を自動でポップアップ🧪様子見中 {{{
+# 入力履歴をポップアップ🧪様子見中 {{{
 def AddInputHist(next_word: string)
   if !!last_word && !!next_word
     inputHist[last_word] = inputHist->get(last_word, [])->insert(next_word)->Uniq()
@@ -1244,6 +1244,7 @@ def SaveRecentJisyo()
   endif
 enddef
 
+# TODO: RefreshよりもReloadかな？と思ったけどまた悩んでいる…
 # duplicated
 export def RefreshJisyo()
   ReloadJisyo()
