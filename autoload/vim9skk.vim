@@ -458,17 +458,17 @@ def SetCharType(ct: CharType)
   silent! doautocmd User Vim9skkModeChanged
 enddef
 
-def ToDirectMode(chain: string = '', delta: number = 0): string
+def ToDirectMode(pipe: string = '', delta: number = 0): string
   SetMode(Mode.Direct)
   start_pos = GetPos() - delta
-  return chain
+  return pipe
 enddef
 
-def RunOnMidasi(chain: string = ''): string
+def RunOnMidasi(pipe: string = ''): string
   if g:vim9skk.run_on_midasi
     U('')
   endif
-  return chain
+  return pipe
 enddef
 
 def SetMode(m: Mode)
@@ -553,9 +553,9 @@ enddef
 # }}}
 
 # 入力モードをポップアップ {{{
-def PopupMode(s: string = ''): string
+def PopupMode(pipe: string = ''): string
   if popup.kind !=# PopupKind.None && popup.kind !=# PopupKind.CharType
-    return s
+    return pipe
   endif
   g:vim9skk_mode = g:vim9skk_enable
     ? mode ==# Mode.Midasi && char.type !=# CharType.Abbr
@@ -565,7 +565,7 @@ def PopupMode(s: string = ''): string
   ClosePopupWin()
   if !g:vim9skk_mode
     redraw
-    return s
+    return pipe
   endif
   var a = GetPopupWinPos()
   if !g:vim9skk_enable
@@ -575,7 +575,7 @@ def PopupMode(s: string = ''): string
   popup.id = popup_create(g:vim9skk_mode, a)
   popup.kind = PopupKind.CharType
   redraw
-  return s
+  return pipe
 enddef
 
 def FollowCursorModePopupWin()
@@ -777,7 +777,7 @@ def UnmapAll()
 enddef
 
 # 小文字入力時(Lower)
-export def L(chain: string): string
+export def L(pipe: string): string
   var prefix = ''
   if mode ==# Mode.Select
     prefix = Complete()
@@ -785,13 +785,13 @@ export def L(chain: string): string
     GetTarget()
       ->Split(g:vim9skk.marker_okuri)[0]
       ->RemoveMarker()
-      ->AddStr(chain)
+      ->AddStr(pipe)
       ->ShowRecent()
   endif
   if !cands
     PopupMode()
   endif
-  var v = chain
+  var v = pipe
   if char.use_roman  && v =~# '[a-z]$'
     feedkeys(v[-1], 'it')
     v = v[ : -2]
@@ -871,13 +871,13 @@ def ReplaceTarget(after: string): string
   return "\<BS>"->repeat(strchars(GetTarget())) .. after
 enddef
 
-def StartSelect(chain: string = ''): string
+def StartSelect(pipe: string = ''): string
   if mode ==# Mode.Select
     return Select(1)
   endif
   const target = GetTarget()
   if !target
-    return chain
+    return pipe
   endif
   target->GetAllCands()
   if !cands
@@ -978,15 +978,15 @@ def SelectTop(): string
   return ReplaceTarget($'{k}{okuri}')
 enddef
 
-def AddLeftForParen(chain: string, p: string): string
+def AddLeftForParen(pipe: string, p: string): string
   if g:vim9skk.parens->Includes(p)
-    return chain .. "\<C-g>U\<Left>"
+    return pipe .. "\<C-g>U\<Left>"
   else
-    return chain
+    return pipe
   endif
 enddef
 
-def Complete(chain: string = ''): string
+def Complete(pipe: string = ''): string
   const before = GetTarget()
   const after = before->RemoveMarker()
   pos_delta = before->len() - after->len()
@@ -996,7 +996,7 @@ def Complete(chain: string = ''): string
   henkan_key = ''
   ClosePopupWin()
   TurnOffAbbr()
-  return chain ..
+  return pipe ..
     after
       ->ReplaceTarget()
       ->AddLeftForParen(after)
@@ -1004,13 +1004,13 @@ def Complete(chain: string = ''): string
       ->AfterComplete()
 enddef
 
-def AfterComplete(chain: string): string
+def AfterComplete(pipe: string): string
   RunOnMidasi()
   ListChainJisyo()
   if !!cands
     PopupCands()
   endif
-  return chain
+  return pipe
 enddef
 # }}}
 
