@@ -747,7 +747,7 @@ def MapMidasiMode()
       (mode !=# Mode.Midasi || !!g:vim9skk_midasi)
     MapFunction(g:vim9skk.keymap.select,   'StartSelect()', enable)
     MapFunction(g:vim9skk.keymap.complete, 'Complete()', enable)
-    MapFunction(g:vim9skk.keymap.cancel,   'Select(-cands_index)->CompleteLazy()', enable)
+    MapFunction(g:vim9skk.keymap.cancel,   'SelectMuhen()', enable)
     MapFunction(g:vim9skk.keymap.prefix,   'SetPrefix()', enable)
   endif
 enddef
@@ -967,6 +967,11 @@ def Select(d: number): string
   cands_index = Cyclic(cands_index + d, len(cands))
   HighlightCands()
   return ReplaceTarget($'{GetSelectedCands()}{okuri}')
+enddef
+
+def SelectMuhen(): string
+  const k = GetSelectedCands(0)
+  return ReplaceTarget($'{k}{okuri}')->CompleteLazy()
 enddef
 
 def SelectTop(): string
