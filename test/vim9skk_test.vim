@@ -246,8 +246,9 @@ suite.TestCancelRegisterUserJisyo = () => {
 }
 suite.TestRegisterUserJisyo = () => {
   TestOnInsAndCmdline(
-    "\<C-j>Kakikukeko\<Space>テスト\<CR>Kakikukeko\<Space>\<C-j>",
-    'テスト',
+    # TODO: SafeStateをやめたい
+    "\<C-j>Kakikukeko\<Space>テスト\<CR>\<Cmd>do SafeState\<CR>Kakikukeko\<Space>\<C-j>",
+    'テストテスト',
     'ユーザー辞書に登録できること'
   )
 }

@@ -34,9 +34,11 @@ var inputHist = {}
 var popup = {
   id: 0,
   kind: PopupKind.None,
-  midasi: 0,
-  midasi_update_timer: 0,
-  midasi_pos: {},
+}
+var popup_midasi = {
+  id: 0,
+  update_timer: 0,
+  pos: {},
 }
 
 var is_registering_user_jisyo = false
@@ -597,45 +599,45 @@ enddef
 # 変換対象を色付け {{{
 # TODO: 画面右端で表示がおかしい
 def PopupColoredMidasi()
-  if !popup.midasi
-    popup.midasi_pos = GetPopupWinPos(0)
-    popup.midasi_pos.highlight = 'vim9skkMidasi'
-    popup.midasi = popup_create('', popup.midasi_pos)
+  if !popup_midasi.id
+    popup_midasi.pos = GetPopupWinPos(0)
+    popup_midasi.pos.highlight = 'vim9skkMidasi'
+    popup_midasi.id = popup_create('', popup_midasi.pos)
   endif
-  if !!popup.midasi_update_timer
-    timer_stop(popup.midasi_update_timer)
+  if !!popup_midasi.update_timer
+    timer_stop(popup_midasi.update_timer)
   endif
-  popup.midasi_update_timer = timer_start(20, UpdateColoredMidasi, { repeat: - 1 })
+  popup_midasi.update_timer = timer_start(20, UpdateColoredMidasi, { repeat: - 1 })
 enddef
 
 def FixPosColoredMidasi()
-  if !!popup.midasi
-    popup.midasi_pos = GetPopupWinPos(0)
-    popup.midasi_pos.highlight = 'vim9skkMidasi'
-    popup_move(popup.midasi, popup.midasi_pos)
+  if !!popup_midasi.id
+    popup_midasi.pos = GetPopupWinPos(0)
+    popup_midasi.pos.highlight = 'vim9skkMidasi'
+    popup_move(popup_midasi.id, popup_midasi.pos)
   endif
 enddef
 
 def CloseColoredMidasi()
-  if !!popup.midasi
-    popup_close(popup.midasi)
-    popup.midasi = 0
-    timer_stop(popup.midasi_update_timer)
-    popup.midasi_update_timer = 0
+  if !!popup_midasi.id
+    popup_close(popup_midasi.id)
+    popup_midasi.id = 0
+    timer_stop(popup_midasi.update_timer)
+    popup_midasi.update_timer = 0
   endif
 enddef
 
 var latest_target = ''
 def UpdateColoredMidasi(timer: number)
-  if !popup.midasi
+  if !popup_midasi.id
     return
   endif
   const t = GetTarget()
   if !t
-    popup_hide(popup.midasi)
+    popup_hide(popup_midasi.id)
   else
-    popup_show(popup.midasi)
-    popup_settext(popup.midasi, GetTarget())
+    popup_show(popup_midasi.id)
+    popup_settext(popup_midasi.id, GetTarget())
   endif
   if mode ==# Mode.Select
     return
@@ -872,21 +874,25 @@ def ReplaceTarget(after: string): string
   return "\<BS>"->repeat(strchars(GetTarget())) .. after
 enddef
 
-def StartSelect(pipe: string = ''): string
+def StartSelect(): string
   if mode ==# Mode.Select
     return SelectBy(1)
   endif
   const target = GetTarget()
   if !target
-    return pipe
-  endif
-  target->GetAllCands()
-  if !cands
-    CloseCands()
     return ''
   endif
+  target->GetAllCands()
+  if cands->len() <= 1
+    cands = RegisterToUserJisyo(henkan_key)
+    if !cands
+      return ''
+    else
+      return Select(0)->CompleteLazy()
+    endif
+  endif
   SetMode(Mode.Select)
-  PopupCands(1)
+  PopupCands()
   return Select(1)
 enddef
 
@@ -944,17 +950,13 @@ def GetAllCands(target: string)
     cands += GetCandsFromJisyo(path, henkan_key)
   endfor
   cands = cands->Uniq()
-  if len(cands) ==# 1
-    if m =~# '[ゔーぱぴぷぺぽ]'
-      cands += [m->ConvChars(hira_chars, kata_chars)]
-    else
-      cands = RegisterToUserJisyo(henkan_key)
-    endif
+  if len(cands) ==# 1 && m =~# '[ゔーぱぴぷぺぽ]'
+    cands += [m->ConvChars(hira_chars, kata_chars)]
   endif
 enddef
 
 def Cyclic(a: number, max: number): number
-  return max ==# 0 ? 0 : ((a % max + max) % max)
+  return max < 1 ? 0 : ((a % max + max) % max)
 enddef
 
 def GetSelectedCands(index: number = -1): string
@@ -964,7 +966,7 @@ enddef
 def Select(index: number): string
   cands_index = Cyclic(index, len(cands))
   HighlightCands()
-  return ReplaceTarget($'{GetSelectedCands(index)}{okuri}')
+  return ReplaceTarget($'{GetSelectedCands()}{okuri}')
 enddef
 
 def SelectBy(d: number): string
@@ -1022,7 +1024,7 @@ enddef
 # }}}
 
 # 変換候補をポップアップ {{{
-def PopupCands(default: number = 0)
+def PopupCands()
   MapSelectMode(!!cands)
   ClosePopupWin()
   if !cands
@@ -1036,14 +1038,14 @@ def PopupCands(default: number = 0)
   const sp = screenpos(0, line('.'), col('.'))
   var popupwin_options = {
     pos: 'topleft',
-    col: popup.midasi_pos.col,
+    col: popup_midasi.pos.col,
     line: sp.row + 1,
     cursorline: true,
     maxheight: g:vim9skk.popup_maxheight,
     wrap: false,
   }
   if mode() ==# 'c'
-    popupwin_options.line = popup.midasi_pos.line - 1
+    popupwin_options.line = popup_midasi.pos.line - 1
     popupwin_options.pos = 'botleft'
   elseif &lines - g:vim9skk.popup_minheight < screenrow()
     popupwin_options.line = sp.row - 1
@@ -1058,14 +1060,10 @@ def PopupCands(default: number = 0)
   popup.kind = PopupKind.Cands
   win_execute(popup.id, 'setlocal tabstop=12')
   win_execute(popup.id, 'syntax match PMenuExtra /\t.*/')
-  if default
-    cands_index = default
-  endif
-  HighlightCands()
 enddef
 
 def HighlightCands()
-  if popup.id !=# 0
+  if popup.kind ==# PopupKind.Cands
     win_execute(popup.id, $':{cands_index + 1}')
     popup_setoptions(popup.id, { cursorline: 0 <= cands_index })
     redraw
@@ -1172,12 +1170,13 @@ export def RegisterToUserJisyo(key: string): list<string>
   endif
   is_registering_user_jisyo = true
   const save = {
+    cur: getpos('.'),
     char_type: char.type,
     mode: mode,
     start_pos: start_pos,
     end_pos: end_pos,
     okuri: okuri,
-    popup_midasi_pos: popup.midasi_pos->deepcopy(),
+    popup_midasi_pos: popup_midasi.pos->deepcopy(),
   }
   var result = []
   try
@@ -1197,15 +1196,16 @@ export def RegisterToUserJisyo(key: string): list<string>
       echo '登録しました'
     endif
   finally
+    noautocmd setpos('.', save.cur)
     noautocmd SetCharType(save.char_type)
     noautocmd SetMode(save.mode)
     start_pos = save.start_pos
     end_pos = save.end_pos
     okuri = save.okuri
-    popup.midasi_pos = save.popup_midasi_pos
+    popup_midasi.pos = save.popup_midasi_pos
     is_registering_user_jisyo = false
-    if !!popup.midasi
-      popup_move(popup.midasi, popup.midasi_pos)
+    if !!popup_midasi
+      popup_move(popup_midasi.id, popup_midasi.pos)
     endif
   endtry
   return result
