@@ -1015,9 +1015,8 @@ def AfterComplete(pipe: string): string
   RunOnMidasi()
   cands = ListInputCmpl()
   if !!cands
-    PopupCands()
     cands_index = -1
-    popup_setoptions(popup.id, { cursorline: false })
+    PopupCands()
   endif
   return pipe
 enddef
@@ -1046,7 +1045,7 @@ def PopupCands()
     pos: 'topleft',
     col: popup_midasi.pos.col,
     line: sp.row + 1,
-    cursorline: true,
+    cursorline: 0 <= cands_index,
     maxheight: g:vim9skk.popup_maxheight,
     wrap: false,
   }
