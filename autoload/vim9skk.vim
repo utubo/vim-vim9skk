@@ -777,7 +777,7 @@ def UnmapAll()
 enddef
 
 # 小文字入力時(Lower)
-export def L(pipe: string): string
+export def L(c: string): string
   var prefix = ''
   if mode ==# Mode.Select
     prefix = Complete()
@@ -785,13 +785,13 @@ export def L(pipe: string): string
     GetTarget()
       ->Split(g:vim9skk.marker_okuri)[0]
       ->RemoveMarker()
-      ->AddStr(pipe)
+      ->AddStr(c)
       ->ShowRecent()
   endif
   if !cands
     PopupMode()
   endif
-  var v = pipe
+  var v = c
   if char.use_roman  && v =~# '[a-z]$'
     feedkeys(v[-1], 'it')
     v = v[ : -2]
@@ -800,7 +800,7 @@ export def L(pipe: string): string
 enddef
 
 # 大文字入力時(Upper)
-def U(key: string): string
+def U(c: string): string
   # 選択モードなら確定する
   var comp = ''
   if mode ==# Mode.Select
@@ -809,12 +809,12 @@ def U(key: string): string
   # 直接入力なら見出しモードへ遷移する
   const target = GetTarget()
   if mode ==# Mode.Direct
-    return comp .. SetMidasi(key)
+    return comp .. SetMidasi(c)
   endif
   # 見出しモードなら…
   var prefix = ''
   const sion = target->matchstr('[a-z]*$')
-  if !!sion && !!key
+  if !!sion && !!c
     # Shift押しっぱなしでもローマ字入力できるように頑張る
     prefix = repeat("\<BS>", sion->len()) .. sion
   elseif !!target && target->stridx(g:vim9skk.marker_okuri) ==# -1
@@ -822,10 +822,10 @@ def U(key: string): string
     prefix = g:vim9skk.marker_okuri
     # Note: <BS>などでマーカーが削除されることを考慮すると、送り仮名の位置を内部的に持つのは難しかった…
   endif
-  return prefix .. key->tolower()
+  return prefix .. c->tolower()
 enddef
 
-def SetMidasi(key: string = '', delta: number = 0): string
+def SetMidasi(c: string = '', delta: number = 0): string
   SetMode(Mode.Midasi)
   const next_start_pos = GetPos() - delta
   const next_word = GetLine()->matchstr($'\%{end_pos}c.*\%{next_start_pos}c')
@@ -833,7 +833,7 @@ def SetMidasi(key: string = '', delta: number = 0): string
     RegisterToChainJisyo(next_word)
   endif
   start_pos = next_start_pos
-  return key->tolower()
+  return c->tolower()
 enddef
 
 export def MidasiInput()
