@@ -1,39 +1,43 @@
 vim9script
 
 # スクリプトローカル変数 {{{
-const MODE_HIRA = 1
-const MODE_KATA = 2
-const MODE_HANK = 3
-const MODE_ALPH = 4
-const MODE_ABBR = 5
+enum CharType
+  Off, Hira, Kata, Hank, Alph, Abbr
+endenum
 
-const SKKMODE_DIRECT = 0
-const SKKMODE_MIDASI = 1
-const SKKMODE_SELECT = 2
+enum Mode
+  Direct, Midasi, Select
+endenum
 
-const POPUPWIN_KIND_NONE = 0
-const POPUPWIN_KIND_MODE = 1
-const POPUPWIN_KIND_KOUHO = 2
+enum PopupKind
+  None, CharType, Cands
+endenum
 
 var initialized = false
-var mode = { id: MODE_HIRA, use_roman: true, items: [] }
-var skkmode = SKKMODE_DIRECT
+var char = { type: CharType.Hira, use_roman: true, items: [] }
+var mode = Mode.Direct
+
 var start_pos = 0
 var end_pos = 1
 var pos_delta = 0 # 確定前後のカーソル位置の差異
 var henkan_key = ''
 var okuri = ''
-var kouho = []
-var kouho_index = -1
+var cands = []
+var cands_index = -1
 var last_word = ''
+
 var jisyo = {}
 var recent_jisyo = {}
 var chain_jisyo = {}
-var popupwin_winid = 0
-var popupwin_kind = POPUPWIN_KIND_NONE
-var popupwin_midasi = 0
-var popupwin_midasi_update_timer = 0
-var popupwin_midasi_pos = {}
+
+var popup = {
+  id: 0,
+  kind: PopupKind.None,
+  midasi: 0,
+  midasi_update_timer: 0,
+  midasi_pos: {},
+}
+
 var is_registering_user_jisyo = false
 
 var roman_table = {
@@ -236,11 +240,11 @@ enddef
 
 # 表示制御 {{{
 def ClosePopupWin()
-  if !!popupwin_winid
-    popup_close(popupwin_winid)
-    popupwin_winid = 0
-    popupwin_kind = POPUPWIN_KIND_NONE
-    kouho_index = -1
+  if !!popup.id
+    popup_close(popup.id)
+    popup.id = 0
+    popup.kind = PopupKind.None
+    cands_index = -1
   endif
 enddef
 # }}}
@@ -278,7 +282,7 @@ def Init()
   endfor
   g:vim9skk.jisyo = expanded
   # その他初期化処理
-  SetMode(MODE_HIRA)
+  SetCharType(CharType.Hira)
   ColorScheme()
   initialized = true
 enddef
@@ -313,13 +317,13 @@ export def Disable(popup_even_off: bool = true): string
   if !g:vim9skk_enable
     return ''
   endif
-  if skkmode !=# SKKMODE_DIRECT
+  if mode !=# Mode.Direct
     Complete()->feedkeys('nit')
     ToDirectMode()
   endif
   g:vim9skk_enable = false
   UnmapAll()
-  CloseKouho()
+  CloseCands()
   PopupMode()
   DoUserEvent('Vim9skkModeChanged')
   DoUserEvent('Vim9skkLeave')
@@ -327,8 +331,8 @@ export def Disable(popup_even_off: bool = true): string
 enddef
 
 export def ToggleSkk()
-  if g:vim9skk_enable && !mode.use_roman
-    SetMode(MODE_HIRA)
+  if g:vim9skk_enable && !char.use_roman
+    SetCharType(CharType.Hira)
     RunOnMidasi()
   elseif g:vim9skk_enable
     Disable()
@@ -347,8 +351,8 @@ def OnInsertLeavePre()
   if !g:vim9skk_enable
     return
   endif
-  CloseKouho()
-  if skkmode ==# SKKMODE_DIRECT
+  CloseCands()
+  if mode ==# Mode.Direct
     return
   endif
   const before = GetTarget()
@@ -383,7 +387,7 @@ enddef
 def OnCmdlineLeavePre()
   if g:vim9skk_enable
     ToDirectMode()
-    CloseKouho()
+    CloseCands()
     TurnOffAbbr()
   endif
 enddef
@@ -391,43 +395,43 @@ enddef
 
 # 入力モード制御 {{{
 var mode_settings_cache = {}
-def GetModeSettings(m: number): any
-  if !mode_settings_cache->has_key(m)
-    mode_settings_cache[m] = CreateModeSettings(m)
+def GetCharConf(ct: CharType): any
+  if !mode_settings_cache->has_key(ct.ordinal)
+    mode_settings_cache[ct.ordinal] = CreateCharConf(ct)
   endif
-  return mode_settings_cache[m]
+  return mode_settings_cache[ct.ordinal]
 enddef
 
-def CreateModeSettings(m: number): any
-  if m ==# MODE_HIRA
+def CreateCharConf(ct: CharType): any
+  if ct ==# CharType.Hira
     return {
-      id: MODE_HIRA,
+      type: CharType.Hira,
       label: g:vim9skk.mode_label.hira,
       use_roman: true,
       items: roman_table_items,
       hi: 'vim9skkModeHira',
     }
-  elseif m ==# MODE_KATA
+  elseif ct ==# CharType.Kata
     return {
-      id: MODE_KATA,
+      type: CharType.Kata,
       label: g:vim9skk.mode_label.kata,
       use_roman: true,
       items: roman_table_items
         ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, kata_chars)]),
       hi: 'vim9skkModeKata',
     }
-  elseif m ==# MODE_HANK
+  elseif ct ==# CharType.Hank
     return {
-      id: MODE_HANK,
+      type: CharType.Hank,
       label: g:vim9skk.mode_label.hankaku,
       use_roman: true,
       items: roman_table_items
         ->ToItems((i) => [i[0], i[1]->ConvChars(hira_chars, hankaku_chars)]),
       hi: 'vim9skkModeHankaku',
     }
-  elseif m ==# MODE_ALPH
+  elseif ct ==# CharType.Alph
     return {
-      id: MODE_ALPH,
+      type: CharType.Alph,
       label: g:vim9skk.mode_label.alphabet,
       use_roman: false,
       items: abbr_chars
@@ -436,7 +440,7 @@ def CreateModeSettings(m: number): any
     }
   else
     return {
-      id: MODE_ABBR,
+      type: CharType.Abbr,
       label: g:vim9skk.mode_label.abbr,
       use_roman: false,
       items: abbr_chars->ToItems((i) => [i, i]),
@@ -445,17 +449,17 @@ def CreateModeSettings(m: number): any
   endif
 enddef
 
-def SetMode(m: number)
-  mode = GetModeSettings(m)
+def SetCharType(ct: CharType)
+  char = GetCharConf(ct)
   MapDirectMode()
-  if skkmode !=# SKKMODE_SELECT
+  if mode !=# Mode.Select
     PopupMode()
   endif
   silent! doautocmd User Vim9skkModeChanged
 enddef
 
 def ToDirectMode(chain: string = '', delta: number = 0): string
-  SetSkkMode(SKKMODE_DIRECT)
+  SetMode(Mode.Direct)
   start_pos = GetPos() - delta
   return chain
 enddef
@@ -467,45 +471,44 @@ def RunOnMidasi(chain: string = ''): string
   return chain
 enddef
 
-def SetSkkMode(s: number)
-  if skkmode !=# s
-    skkmode = s
+def SetMode(m: Mode)
+  if mode !=# m
+    mode = m
     g:vim9skk_midasi = ''
     MapMidasiMode()
-    if s ==# SKKMODE_MIDASI
+    if m ==# Mode.Midasi
       PopupMode()
       PopupColoredMidasi()
-    elseif s !=# SKKMODE_SELECT
+    elseif m !=# Mode.Select
       CloseColoredMidasi()
     endif
   endif
 enddef
 
 def ToggleMidasi(): string
-  if skkmode ==# SKKMODE_DIRECT
+  if mode ==# Mode.Direct
     return U('')
   else
     return Complete()->ToDirectMode()->PopupMode()
   endif
 enddef
 
-def ToggleMode(m: number): string
-  CloseKouho()
+def ToggleCt(ct: CharType): string
+  CloseCands()
   var target = ''
-  if skkmode ==# SKKMODE_MIDASI
+  if mode ==# Mode.Midasi
     target = GetTarget()
     if !target
       ToDirectMode()
     endif
   endif
   # 基本はカタカナモードにするだけ
-  if skkmode ==# SKKMODE_DIRECT
-    SetMode(mode.id !=# m ? m : MODE_HIRA)
+  if mode ==# Mode.Direct
+    SetCharType(char.type !=# ct ? ct : CharType.Hira)
     return ''
   endif
   # 見出しや選択中ならカタカナに変換して確定する
-  const k_chars = m ==# MODE_KATA ? kata_chars : hankaku_chars
-  const mm = GetModeSettings(m)
+  const k_chars = ct ==# CharType.Kata ? kata_chars : hankaku_chars
   const before = target->RemoveMarker()
   const after = before
     ->SwapChars(hira_chars, k_chars)
@@ -520,30 +523,30 @@ def ToggleMode(m: number): string
 enddef
 
 def ToggleAbbr(): string
-  if mode.id ==# MODE_ABBR
+  if char.type ==# CharType.Abbr
     TurnOffAbbr()
-    if skkmode ==# SKKMODE_MIDASI || skkmode ==# SKKMODE_SELECT
+    if mode ==# Mode.Midasi || mode ==# Mode.Select
       return Complete()
     endif
     TurnOffAbbr()
     return ''
-  elseif skkmode ==# SKKMODE_MIDASI
-    SetMode(MODE_ABBR)
+  elseif mode ==# Mode.Midasi
+    SetCharType(CharType.Abbr)
     return ''
-  elseif skkmode ==# SKKMODE_SELECT
+  elseif mode ==# Mode.Select
     const c = Complete()
-    SetMode(MODE_ABBR)
+    SetCharType(CharType.Abbr)
     return c .. SetMidasi()
   else
-    SetMode(MODE_ABBR)
+    SetCharType(CharType.Abbr)
     return SetMidasi()
   endif
 enddef
 
 def TurnOffAbbr(): string
-  if mode.id ==# MODE_ABBR
+  if char.type ==# CharType.Abbr
     UnmapAll()
-    SetMode(MODE_HIRA)
+    SetCharType(CharType.Hira)
   endif
   return ''
 enddef
@@ -551,13 +554,13 @@ enddef
 
 # 入力モードをポップアップ {{{
 def PopupMode(s: string = ''): string
-  if popupwin_kind !=# POPUPWIN_KIND_NONE && popupwin_kind !=# POPUPWIN_KIND_MODE
+  if popup.kind !=# PopupKind.None && popup.kind !=# PopupKind.CharType
     return s
   endif
   g:vim9skk_mode = g:vim9skk_enable
-    ? skkmode ==# SKKMODE_MIDASI && mode.id !=# MODE_ABBR
+    ? mode ==# Mode.Midasi && char.type !=# CharType.Abbr
     ? g:vim9skk.mode_label.midasi
-    : mode.label
+    : char.label
     : g:vim9skk.mode_label.off
   ClosePopupWin()
   if !g:vim9skk_mode
@@ -568,72 +571,72 @@ def PopupMode(s: string = ''): string
   if !g:vim9skk_enable
     a.time = g:vim9skk.mode_label_timeout
   endif
-  a.highlight = g:vim9skk_enable ? mode.hi : 'vim9skkModeOff'
-  popupwin_winid = popup_create(g:vim9skk_mode, a)
-  popupwin_kind = POPUPWIN_KIND_MODE
+  a.highlight = g:vim9skk_enable ? char.hi : 'vim9skkModeOff'
+  popup.id = popup_create(g:vim9skk_mode, a)
+  popup.kind = PopupKind.CharType
   redraw
   return s
 enddef
 
 def FollowCursorModePopupWin()
-  if !popupwin_winid || popupwin_kind !=# POPUPWIN_KIND_MODE || !g:vim9skk_enable
+  if !popup.id || popup.kind !=# PopupKind.CharType || !g:vim9skk_enable
     return
   endif
-  if skkmode ==# SKKMODE_MIDASI && !!start_pos
+  if mode ==# Mode.Midasi && !!start_pos
       const p = GetPos()
       if p < start_pos
         SetMidasi()
         FixPosColoredMidasi()
       endif
   endif
-  popup_move(popupwin_winid, GetPopupWinPos())
+  popup_move(popup.id, GetPopupWinPos())
 enddef
 # }}}
 
 # 変換対象を色付け {{{
 # TODO: 画面右端で表示がおかしい
 def PopupColoredMidasi()
-  if !popupwin_midasi
-    popupwin_midasi_pos = GetPopupWinPos(0)
-    popupwin_midasi_pos.highlight = 'vim9skkMidasi'
-    popupwin_midasi = popup_create('', popupwin_midasi_pos)
+  if !popup.midasi
+    popup.midasi_pos = GetPopupWinPos(0)
+    popup.midasi_pos.highlight = 'vim9skkMidasi'
+    popup.midasi = popup_create('', popup.midasi_pos)
   endif
-  if !!popupwin_midasi_update_timer
-    timer_stop(popupwin_midasi_update_timer)
+  if !!popup.midasi_update_timer
+    timer_stop(popup.midasi_update_timer)
   endif
-  popupwin_midasi_update_timer = timer_start(20, UpdateColoredMidasi, { repeat: - 1 })
+  popup.midasi_update_timer = timer_start(20, UpdateColoredMidasi, { repeat: - 1 })
 enddef
 
 def FixPosColoredMidasi()
-  if !!popupwin_midasi
-    popupwin_midasi_pos = GetPopupWinPos(0)
-    popupwin_midasi_pos.highlight = 'vim9skkMidasi'
-    popup_move(popupwin_midasi, popupwin_midasi_pos)
+  if !!popup.midasi
+    popup.midasi_pos = GetPopupWinPos(0)
+    popup.midasi_pos.highlight = 'vim9skkMidasi'
+    popup_move(popup.midasi, popup.midasi_pos)
   endif
 enddef
 
 def CloseColoredMidasi()
-  if !!popupwin_midasi
-    popup_close(popupwin_midasi)
-    popupwin_midasi = 0
-    timer_stop(popupwin_midasi_update_timer)
-    popupwin_midasi_update_timer = 0
+  if !!popup.midasi
+    popup_close(popup.midasi)
+    popup.midasi = 0
+    timer_stop(popup.midasi_update_timer)
+    popup.midasi_update_timer = 0
   endif
 enddef
 
 var latest_target = ''
 def UpdateColoredMidasi(timer: number)
-  if !popupwin_midasi
+  if !popup.midasi
     return
   endif
   const t = GetTarget()
   if !t
-    popup_hide(popupwin_midasi)
+    popup_hide(popup.midasi)
   else
-    popup_show(popupwin_midasi)
-    popup_settext(popupwin_midasi, GetTarget())
+    popup_show(popup.midasi)
+    popup_settext(popup.midasi, GetTarget())
   endif
-  if skkmode ==# SKKMODE_SELECT
+  if mode ==# Mode.Select
     return
   endif
   if latest_target ==# t
@@ -663,7 +666,7 @@ def MapFunction(keys: any, f: string, enable: bool = true)
       # nop
     elseif enable
       # 選択モードのxや全英モードのLに対応するための面倒なif文
-      if skkmode ==# SKKMODE_SELECT || mode.use_roman || abbr_chars->Excludes(key)
+      if mode ==# Mode.Select || char.use_roman || abbr_chars->Excludes(key)
         const nowait = len(key) ==# 1 ? '<nowait>' : ''
         execute $'map! <buffer> <script> {nowait} {key} <ScriptCmd>{f}->feedkeys("nit")<CR>'
       endif
@@ -683,14 +686,14 @@ def MapToBuf()
   b:vim9skk_saved_keymap = maplist()->filter((_, m) => m.buffer)
   MapDirectMode()
   MapMidasiMode()
-  MapSelectMode(!!kouho)
+  MapSelectMode(!!cands)
 enddef
 
 def MapDirectMode()
-  if get(b:, 'vim9skk_keymapped', 0) ==# mode.id
+  if get(b:, 'vim9skk_keymapped', CharType.Off) ==# char.type
     return
   endif
-  b:vim9skk_keymapped = mode.id
+  b:vim9skk_keymapped = char.type
   MapRoman()
   # 見出しモードや選択モードから戻ってきたときのためのバックアップ
   b:vim9skk_saved_roman = {}
@@ -701,9 +704,9 @@ def MapDirectMode()
     ]
   endfor
   MapFunction(g:vim9skk.keymap.disable,  'Disable()')
-  MapFunction(g:vim9skk.keymap.kata,     'ToggleMode(MODE_KATA)')
-  MapFunction(g:vim9skk.keymap.hankaku,  'ToggleMode(MODE_HANK)')
-  MapFunction(g:vim9skk.keymap.alphabet, 'ToggleMode(MODE_ALPH)')
+  MapFunction(g:vim9skk.keymap.kata,     'ToggleCt(CharType.Kata)')
+  MapFunction(g:vim9skk.keymap.hankaku,  'ToggleCt(CharType.Hank)')
+  MapFunction(g:vim9skk.keymap.alphabet, 'ToggleCt(CharType.Alph)')
   MapFunction(g:vim9skk.keymap.abbr,     'ToggleAbbr()')
   MapFunction(g:vim9skk.keymap.midasi,   'U("")') # 大文字を押したのと同じ
   MapFunction(g:vim9skk.keymap.midasi_toggle, 'ToggleMidasi()')
@@ -712,7 +715,7 @@ def MapDirectMode()
 enddef
 
 def MapRoman()
-  if mode.use_roman
+  if char.use_roman
     for key in abbr_chars
       const k = key->EscapeForMap()
       silent! execute $'unmap! <buffer> <script> {k}'
@@ -728,8 +731,8 @@ def MapRoman()
       silent! execute $'unmap! <buffer> <script> {k}'
     endfor
   endif
-  const map = mode.use_roman ? 'map!' : 'noremap! <nowait>'
-  for [key, value] in mode.items
+  const map = char.use_roman ? 'map!' : 'noremap! <nowait>'
+  for [key, value] in char.items
     const k = key->EscapeForMap()
     const v = value->escape('"|\\')
     # Note: feedkeysだとwindowsで`せ`が文字化けする
@@ -739,11 +742,11 @@ enddef
 
 def MapMidasiMode()
   if g:vim9skk_enable
-    const enable = skkmode !=# SKKMODE_DIRECT &&
-      (skkmode !=# SKKMODE_MIDASI || !!g:vim9skk_midasi)
+    const enable = mode !=# Mode.Direct &&
+      (mode !=# Mode.Midasi || !!g:vim9skk_midasi)
     MapFunction(g:vim9skk.keymap.select,   'StartSelect()', enable)
     MapFunction(g:vim9skk.keymap.complete, 'Complete()', enable)
-    MapFunction(g:vim9skk.keymap.cancel,   'Select(-kouho_index)->Complete()', enable)
+    MapFunction(g:vim9skk.keymap.cancel,   'Select(-cands_index)->Complete()', enable)
     MapFunction(g:vim9skk.keymap.prefix,   'SetPrefix()', enable)
   endif
 enddef
@@ -757,10 +760,10 @@ def MapSelectMode(enable: bool)
 enddef
 
 def UnmapAll()
-  if !get(b:, 'vim9skk_keymapped', 0)
+  if get(b:, 'vim9skk_keymapped', CharType.Off) ==# CharType.Off
     return
   endif
-  b:vim9skk_keymapped = 0
+  b:vim9skk_keymapped = CharType.Off
   for m in maplist()->filter((_, m) => m.script) # cmdlineはm.buffer無し
     const lhs = m.lhs
       ->substitute('|', '<BAR>', 'g')
@@ -776,20 +779,20 @@ enddef
 # 小文字入力時(Lower)
 export def L(chain: string): string
   var prefix = ''
-  if skkmode ==# SKKMODE_SELECT
+  if mode ==# Mode.Select
     prefix = Complete()
-  elseif skkmode ==# SKKMODE_MIDASI
+  elseif mode ==# Mode.Midasi
     GetTarget()
       ->Split(g:vim9skk.marker_okuri)[0]
       ->RemoveMarker()
       ->AddStr(chain)
       ->ShowRecent()
   endif
-  if !kouho
+  if !cands
     PopupMode()
   endif
   var v = chain
-  if mode.use_roman  && v =~# '[a-z]$'
+  if char.use_roman  && v =~# '[a-z]$'
     feedkeys(v[-1], 'it')
     v = v[ : -2]
   endif
@@ -800,12 +803,12 @@ enddef
 def U(key: string): string
   # 選択モードなら確定する
   var comp = ''
-  if skkmode ==# SKKMODE_SELECT
+  if mode ==# Mode.Select
     comp = Complete()
   endif
   # 直接入力なら見出しモードへ遷移する
   const target = GetTarget()
-  if skkmode ==# SKKMODE_DIRECT
+  if mode ==# Mode.Direct
     return comp .. SetMidasi(key)
   endif
   # 見出しモードなら…
@@ -823,7 +826,7 @@ def U(key: string): string
 enddef
 
 def SetMidasi(key: string = '', delta: number = 0): string
-  SetSkkMode(SKKMODE_MIDASI)
+  SetMode(Mode.Midasi)
   const next_start_pos = GetPos() - delta
   const next_word = GetLine()->matchstr($'\%{end_pos}c.*\%{next_start_pos}c')
   if !!next_word
@@ -834,10 +837,10 @@ def SetMidasi(key: string = '', delta: number = 0): string
 enddef
 
 export def MidasiInput()
-  if skkmode ==# SKKMODE_MIDASI
+  if mode ==# Mode.Midasi
     g:vim9skk_midasi = GetTarget()
     MapMidasiMode()
-    if mode.id ==# MODE_ABBR
+    if char.type ==# CharType.Abbr
       DoUserEvent('Vim9skkAbbrInput')
     else
       DoUserEvent('Vim9skkMidasiInput')
@@ -846,7 +849,7 @@ export def MidasiInput()
 enddef
 
 def SetPrefix(): string
-  if skkmode ==# SKKMODE_SELECT
+  if mode ==# Mode.Select
     return Complete() .. SetMidasi(g:vim9skk.keymap.prefix, pos_delta)
   else
     return g:vim9skk.keymap.prefix
@@ -869,25 +872,25 @@ def ReplaceTarget(after: string): string
 enddef
 
 def StartSelect(chain: string = ''): string
-  if skkmode ==# SKKMODE_SELECT
+  if mode ==# Mode.Select
     return Select(1)
   endif
   const target = GetTarget()
   if !target
     return chain
   endif
-  target->GetAllKouho()
-  if !kouho
-    CloseKouho()
+  target->GetAllCands()
+  if !cands
+    CloseCands()
     return ''
   endif
-  SetSkkMode(SKKMODE_SELECT)
-  PopupKouho(1)
-  kouho_index = 0
+  SetMode(Mode.Select)
+  PopupCands(1)
+  cands_index = 0
   return Select(1)
 enddef
 
-def GetKouhoFromJisyo(path: string, key: string): list<string>
+def GetCandsFromJisyo(path: string, key: string): list<string>
   const j = ReadJisyo(path)
   const head = $'{key} '->IconvTo(j.enc)
   const max = len(j.lines) - 1
@@ -920,15 +923,15 @@ def GetKouhoFromJisyo(path: string, key: string): list<string>
   return []
 enddef
 
-def GetAllKouho(target: string)
+def GetAllCands(target: string)
   if !target
-    kouho = []
+    cands = []
     return
   endif
   # `▽ほげ*ふが`を見出しと送り仮名に分割する
   const [m, o] = target
     ->Split(g:vim9skk.marker_okuri)
-  kouho = [$'{m};無変換'] # 候補一つ目は無変換
+  cands = [$'{m};無変換'] # 候補一つ目は無変換
   okuri = o # 送り仮名は候補選択時に使うのでスクリプトローカルに保持しておく
   # 候補を検索する
   const midasi_key = m->ConvChars(kata_chars, hira_chars)
@@ -938,14 +941,14 @@ def GetAllKouho(target: string)
     ->matchstr('^.')
   henkan_key = $'{midasi_key}{okuri_table->get(okuri_key, '')}' # `ほげf`
   for path in [g:vim9skk.jisyo_recent, g:vim9skk.jisyo_user] + g:vim9skk.jisyo
-    kouho += GetKouhoFromJisyo(path, henkan_key)
+    cands += GetCandsFromJisyo(path, henkan_key)
   endfor
-  kouho = kouho->Uniq()
-  if len(kouho) ==# 1
+  cands = cands->Uniq()
+  if len(cands) ==# 1
     if m =~# '[ゔーぱぴぷぺぽ]'
-      kouho += [m->ConvChars(hira_chars, kata_chars)]
+      cands += [m->ConvChars(hira_chars, kata_chars)]
     else
-      kouho = RegisterToUserJisyo(henkan_key)
+      cands = RegisterToUserJisyo(henkan_key)
     endif
   endif
 enddef
@@ -954,21 +957,21 @@ def Cyclic(a: number, max: number): number
   return max ==# 0 ? 0 : ((a % max + max) % max)
 enddef
 
-def GetSelectedKouho(index: number = -1): string
-  return kouho->get(index < 0 ? kouho_index : index, '')->substitute(';.*', '', '')
+def GetSelectedCands(index: number = -1): string
+  return cands->get(index < 0 ? cands_index : index, '')->substitute(';.*', '', '')
 enddef
 
 def Select(d: number): string
-  SetSkkMode(SKKMODE_SELECT)
-  kouho_index = Cyclic(kouho_index + d, len(kouho))
-  HighlightKouho()
-  return ReplaceTarget($'{GetSelectedKouho()}{okuri}')
+  SetMode(Mode.Select)
+  cands_index = Cyclic(cands_index + d, len(cands))
+  HighlightCands()
+  return ReplaceTarget($'{GetSelectedCands()}{okuri}')
 enddef
 
 def SelectTop(): string
-  var k = GetSelectedKouho(0)
-  if get(kouho, 0, '')->stridx(';無変換') !=# -1 && 1 < len(kouho)
-    k = GetSelectedKouho(1)
+  var k = GetSelectedCands(0)
+  if get(cands, 0, '')->stridx(';無変換') !=# -1 && 1 < len(cands)
+    k = GetSelectedCands(1)
   endif
   # TODO: SafeStateを乱用すると後で絶対嵌る…
   au vim9skk SafeState * ++once Complete()
@@ -987,9 +990,9 @@ def Complete(chain: string = ''): string
   const before = GetTarget()
   const after = before->RemoveMarker()
   pos_delta = before->len() - after->len()
-  RegisterToRecentJisyo(henkan_key, GetSelectedKouho())
+  RegisterToRecentJisyo(henkan_key, GetSelectedCands())
   RegisterToChainJisyo(after)
-  kouho = []
+  cands = []
   henkan_key = ''
   ClosePopupWin()
   TurnOffAbbr()
@@ -1004,18 +1007,18 @@ enddef
 def AfterComplete(chain: string): string
   RunOnMidasi()
   ListChainJisyo()
-  if !!kouho
-    PopupKouho()
+  if !!cands
+    PopupCands()
   endif
   return chain
 enddef
 # }}}
 
 # 候補をポップアップ {{{
-def PopupKouho(default: number = 0)
-  MapSelectMode(!!kouho)
+def PopupCands(default: number = 0)
+  MapSelectMode(!!cands)
   ClosePopupWin()
-  if !kouho
+  if !cands
     redraw
     return
   endif
@@ -1026,46 +1029,46 @@ def PopupKouho(default: number = 0)
   const sp = screenpos(0, line('.'), col('.'))
   var popupwin_options = {
     pos: 'topleft',
-    col: popupwin_midasi_pos.col,
+    col: popup.midasi_pos.col,
     line: sp.row + 1,
     cursorline: true,
     maxheight: g:vim9skk.popup_maxheight,
     wrap: false,
   }
   if mode() ==# 'c'
-    popupwin_options.line = popupwin_midasi_pos.line - 1
+    popupwin_options.line = popup.midasi_pos.line - 1
     popupwin_options.pos = 'botleft'
   elseif &lines - g:vim9skk.popup_minheight < screenrow()
     popupwin_options.line = sp.row - 1
     popupwin_options.pos = 'botleft'
   endif
   var lines = []
-  for k in kouho
+  for k in cands
     const l = k->substitute(';', "\t", '')
     lines += [l]
   endfor
-  popupwin_winid = popup_create(lines, popupwin_options)
-  popupwin_kind = POPUPWIN_KIND_KOUHO
-  win_execute(popupwin_winid, 'setlocal tabstop=12')
-  win_execute(popupwin_winid, 'syntax match PMenuExtra /\t.*/')
+  popup.id = popup_create(lines, popupwin_options)
+  popup.kind = PopupKind.Cands
+  win_execute(popup.id, 'setlocal tabstop=12')
+  win_execute(popup.id, 'syntax match PMenuExtra /\t.*/')
   if default
-    kouho_index = default
+    cands_index = default
   endif
-  HighlightKouho()
+  HighlightCands()
 enddef
 
-def HighlightKouho()
-  if popupwin_winid !=# 0
-    win_execute(popupwin_winid, $':{kouho_index + 1}')
-    popup_setoptions(popupwin_winid, { cursorline: 0 <= kouho_index })
+def HighlightCands()
+  if popup.id !=# 0
+    win_execute(popup.id, $':{cands_index + 1}')
+    popup_setoptions(popup.id, { cursorline: 0 <= cands_index })
     redraw
   endif
 enddef
 
-def CloseKouho()
+def CloseCands()
   MapSelectMode(false)
-  kouho = []
-  if popupwin_kind ==# POPUPWIN_KIND_KOUHO
+  cands = []
+  if popup.kind ==# PopupKind.Cands
     ClosePopupWin()
   endif
   redraw
@@ -1082,21 +1085,21 @@ def AddDetail(list: list<string>, detail: string): list<string>
 enddef
 
 def ShowRecent(target: string)
-  kouho = []
+  cands = []
   const j = ReadRecentJisyo()
   const head = target->IconvTo(j.enc)
   for line in j.lines
     if line->StartsWith(head)
-      kouho += line->IconvFrom(j.enc)->Split(' ')[1]->split('/')
+      cands += line->IconvFrom(j.enc)->Split(' ')[1]->split('/')
     endif
   endfor
-  if !len(kouho)
-    CloseKouho()
+  if !len(cands)
+    CloseCands()
   else
-    kouho = kouho->Uniq()->AddDetail('変換履歴')
-    kouho_index = -1
+    cands = cands->Uniq()->AddDetail('変換履歴')
+    cands_index = -1
     okuri = ''
-    PopupKouho()
+    PopupCands()
   endif
 enddef
 # }}}
@@ -1113,10 +1116,10 @@ enddef
 
 def ListChainJisyo()
   if chain_jisyo->has_key(last_word)
-    kouho = chain_jisyo[last_word]->AddDetail('入力履歴')
-    kouho_index = -1
+    cands = chain_jisyo[last_word]->AddDetail('入力履歴')
+    cands_index = -1
   else
-    kouho = []
+    cands = []
   endif
 enddef
 # }}}
@@ -1163,16 +1166,16 @@ export def RegisterToUserJisyo(key: string): list<string>
   endif
   is_registering_user_jisyo = true
   const save = {
-    mode_id: mode.id,
-    skkmode: skkmode,
+    char_type: char.type,
+    mode: mode,
     start_pos: start_pos,
     end_pos: end_pos,
     okuri: okuri,
-    popupwin_midasi_pos: popupwin_midasi_pos->deepcopy(),
+    popup_midasi_pos: popup.midasi_pos->deepcopy(),
   }
   var result = []
   try
-    SetSkkMode(SKKMODE_DIRECT)
+    SetMode(Mode.Direct)
     autocmd vim9skk CmdlineEnter * ++once PopupMode()
     const value = input($'ユーザー辞書に登録({key}): ')->trim()
     if !value
@@ -1188,15 +1191,15 @@ export def RegisterToUserJisyo(key: string): list<string>
       echo '登録しました'
     endif
   finally
-    noautocmd SetMode(save.mode_id)
-    noautocmd SetSkkMode(save.skkmode)
+    noautocmd SetCharType(save.char_type)
+    noautocmd SetMode(save.mode)
     start_pos = save.start_pos
     end_pos = save.end_pos
     okuri = save.okuri
-    popupwin_midasi_pos = save.popupwin_midasi_pos
+    popup.midasi_pos = save.popup_midasi_pos
     is_registering_user_jisyo = false
-    if !!popupwin_midasi
-      popup_move(popupwin_midasi, popupwin_midasi_pos)
+    if !!popup.midasi
+      popup_move(popup.midasi, popup.midasi_pos)
     endif
   endtry
   return result
@@ -1218,7 +1221,7 @@ def RegisterToRecentJisyo(before: string, after: string)
     return
   endif
   # 新規に追加する行
-  const afters = GetKouhoFromJisyo(g:vim9skk.jisyo_recent, before)
+  const afters = GetCandsFromJisyo(g:vim9skk.jisyo_recent, before)
     ->insert(after)
     ->Uniq()
     ->join('/')
