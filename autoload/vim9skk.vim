@@ -743,9 +743,9 @@ def MapRoman()
   endfor
 enddef
 
-def MapMidasiMode()
+def MapMidasiMode(force: bool = false)
   if g:vim9skk_enable
-    const enable = mode !=# Mode.Direct &&
+    const enable = force || mode !=# Mode.Direct &&
       (mode !=# Mode.Midasi || !!g:vim9skk_midasi)
     MapFunction(g:vim9skk.keymap.select,   'StartSelect()', enable)
     MapFunction(g:vim9skk.keymap.complete, 'Complete()', enable)
@@ -886,6 +886,7 @@ def StartSelect(): string
   if cands->len() <= 1
     cands = RegisterToUserJisyo(henkan_key)
     if !cands
+      MapMidasiMode(true) # TODO: 2重でマッピングしちゃうかも
       return ''
     else
       return Select(0)->CompleteLazy()
@@ -970,6 +971,7 @@ def Select(index: number): string
 enddef
 
 def SelectBy(d: number): string
+  SetMode(Mode.Select) # TODO: Selectの方に置いたほうがいいかも？
   return Select(cands_index + d)
 enddef
 
