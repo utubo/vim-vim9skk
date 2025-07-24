@@ -747,7 +747,7 @@ def MapMidasiMode()
       (mode !=# Mode.Midasi || !!g:vim9skk_midasi)
     MapFunction(g:vim9skk.keymap.select,   'StartSelect()', enable)
     MapFunction(g:vim9skk.keymap.complete, 'Complete()', enable)
-    MapFunction(g:vim9skk.keymap.cancel,   'Select(-cands_index)->Complete()', enable)
+    MapFunction(g:vim9skk.keymap.cancel,   'Select(-cands_index)->CompleteLazy()', enable)
     MapFunction(g:vim9skk.keymap.prefix,   'SetPrefix()', enable)
   endif
 enddef
@@ -974,9 +974,7 @@ def SelectTop(): string
   if get(cands, 0, '')->stridx(';無変換') !=# -1 && 1 < len(cands)
     k = GetSelectedCands(1)
   endif
-  # TODO: SafeStateを乱用すると後で絶対嵌る…
-  au vim9skk SafeState * ++once Complete()
-  return ReplaceTarget($'{k}{okuri}')
+  return ReplaceTarget($'{k}{okuri}')->CompleteLazy()
 enddef
 
 def AddLeftForParen(pipe: string, p: string): string
@@ -1011,6 +1009,12 @@ def AfterComplete(pipe: string): string
   if !!cands
     PopupCands()
   endif
+  return pipe
+enddef
+
+def CompleteLazy(pipe: string): string
+  # TODO: SafeStateを乱用すると後で絶対嵌る…
+  au vim9skk SafeState * ++once Complete()
   return pipe
 enddef
 # }}}

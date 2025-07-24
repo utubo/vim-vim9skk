@@ -176,6 +176,14 @@ suite.TestHenkan = () => {
   )
 }
 
+suite.TestCancelHenkan = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>Ai\<Space>\<C-g>\<C-j>",
+    'あい',
+    '変換をキャンセルできること'
+  )
+}
+
 suite.TestHenkanAbbr = () => {
   TestOnInsAndCmdline(
     "\<C-j>/smile\<Space>\<CR>\<C-j>",
