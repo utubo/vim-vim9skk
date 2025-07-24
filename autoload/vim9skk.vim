@@ -27,9 +27,8 @@ var cands_index = -1
 var last_word = ''
 
 var jisyo = {}
-var recent_jisyo = {}
-
-var input_hist = {}
+var recent = {}
+var input_cmpl = {}
 
 var popup = {
   id: 0,
@@ -209,6 +208,17 @@ def DoUserEvent(event: string)
     execute $'doautocmd User {event}'
   endif
 enddef
+# }}}
+
+# ポップアップウインドウ共通 {{{
+def ClosePopupWin()
+  if !!popup.id
+    popup_close(popup.id)
+    popup.id = 0
+    popup.kind = PopupKind.None
+    cands_index = -1
+  endif
+enddef
 
 def GetPopupWinPos(d: number = 1): any
   var pp = {}
@@ -238,18 +248,6 @@ enddef
 export def NoChangePopupPos(popup_pos: any): any
   return popup_pos
 enddef
-
-# }}}
-
-# 表示制御 {{{
-def ClosePopupWin()
-  if !!popup.id
-    popup_close(popup.id)
-    popup.id = 0
-    popup.kind = PopupKind.None
-    cands_index = -1
-  endif
-enddef
 # }}}
 
 # 基本 {{{
@@ -262,7 +260,7 @@ def Init()
     autocmd InsertLeavePre * OnInsertLeavePre()
     autocmd CmdlineEnter * OnCmdlineEnter()
     autocmd CmdlineLeave * OnCmdlineLeavePre()
-    autocmd VimLeave * SaveRecentJisyo()
+    autocmd VimLeave * SaveRecent()
     # Note:
     # 確定時の<BS>によるカーソル移動で発火すると色々面倒なのでSafeStateを挟む
     autocmd CursorMovedI,CursorMovedC * autocmd SafeState * ++once FollowCursorModePopupWin()
@@ -367,8 +365,8 @@ def OnInsertLeavePre()
   ))
   ToDirectMode()
   TurnOffAbbr()
-  AddInputHist(after)
-  AddInputHist('')
+  AddInputCmpl(after)
+  AddInputCmpl('')
 enddef
 
 def OnCmdlineEnter()
@@ -517,7 +515,7 @@ def ToggleCt(ct: CharType): string
     ->SwapChars(hira_chars, k_chars)
     ->ConvChars(kata_chars, k_chars)
     ->SwapChars(alphabet_chars, abbr_chars)
-  RegisterToRecentJisyo(before, after)
+  RegisterToRecent(before, after)
   return after
     ->ReplaceTarget()
     ->ToDirectMode()
@@ -833,7 +831,7 @@ def SetMidasi(c: string = '', delta: number = 0): string
   const next_start_pos = GetPos() - delta
   const next_word = GetLine()->matchstr($'\%{end_pos}c.*\%{next_start_pos}c')
   if !!next_word
-    AddInputHist(next_word)
+    AddInputCmpl(next_word)
   endif
   start_pos = next_start_pos
   return c->tolower()
@@ -995,8 +993,8 @@ def Complete(pipe: string = ''): string
   const before = GetTarget()
   const after = before->RemoveMarker()
   pos_delta = before->len() - after->len()
-  RegisterToRecentJisyo(henkan_key, GetSelectedCands())
-  AddInputHist(after)
+  RegisterToRecent(henkan_key, GetSelectedCands())
+  AddInputCmpl(after)
   cands = []
   henkan_key = ''
   ClosePopupWin()
@@ -1011,7 +1009,7 @@ enddef
 
 def AfterComplete(pipe: string): string
   RunOnMidasi()
-  cands = ListInputHist()
+  cands = ListInputCmpl()
   if !!cands
     PopupCands()
     cands_index = -1
@@ -1095,7 +1093,7 @@ enddef
 
 def ShowRecent(target: string)
   cands = []
-  const j = ReadRecentJisyo()
+  const j = ReadRecent()
   const head = target->IconvTo(j.enc)
   for line in j.lines
     if line->StartsWith(head)
@@ -1114,17 +1112,17 @@ enddef
 # }}}
 
 # 入力履歴をポップアップ🧪様子見中 {{{
-def AddInputHist(next_word: string)
+def AddInputCmpl(next_word: string)
   if !!last_word && !!next_word
-    input_hist[last_word] = input_hist->get(last_word, [])->insert(next_word)->Uniq()
+    input_cmpl[last_word] = input_cmpl->get(last_word, [])->insert(next_word)->Uniq()
   endif
   last_word = next_word
   end_pos = start_pos + next_word->len()
 enddef
 
-def ListInputHist(): list<string>
-  if input_hist->has_key(last_word)
-    return input_hist[last_word]->AddDetail('入力履歴')
+def ListInputCmpl(): list<string>
+  if input_cmpl->has_key(last_word)
+    return input_cmpl[last_word]->AddDetail('入力履歴')
   else
     return []
   endif
@@ -1214,18 +1212,18 @@ export def RegisterToUserJisyo(key: string): list<string>
   return result
 enddef
 
-def ReadRecentJisyo(): dict<any>
-  if !recent_jisyo
+def ReadRecent(): dict<any>
+  if !recent
     const [p, enc] = ToFullPathAndEncode(g:vim9skk.jisyo_recent)
     if !filereadable(p)
       return { lines: [], enc: enc }
     endif
-    recent_jisyo = { lines: readfile(p), enc: enc }
+    recent = { lines: readfile(p), enc: enc }
   endif
-  return recent_jisyo
+  return recent
 enddef
 
-def RegisterToRecentJisyo(before: string, after: string)
+def RegisterToRecent(before: string, after: string)
   if !before || !after
     return
   endif
@@ -1236,7 +1234,7 @@ def RegisterToRecentJisyo(before: string, after: string)
     ->join('/')
   const newline = $'{before} /{afters}/'
   # 既存の行を削除してから先頭に追加する
-  var j = ReadRecentJisyo()
+  var j = ReadRecent()
   const head = $'{before} '->IconvTo(j.enc)
   j.lines = j.lines # 再代入しないとだめ？？
     ->filter((_, v) => !v->StartsWith(head))
@@ -1246,8 +1244,8 @@ def RegisterToRecentJisyo(before: string, after: string)
   jisyo[g:vim9skk.jisyo_recent] = { lines: j.lines->copy()->sort(), enc: j.enc }
 enddef
 
-def SaveRecentJisyo()
-  var lines = ReadRecentJisyo().lines
+def SaveRecent()
+  var lines = ReadRecent().lines
   if !!lines
     lines->WriteJisyo(g:vim9skk.jisyo_recent)
   endif
@@ -1261,7 +1259,7 @@ enddef
 
 export def ReloadJisyo()
   jisyo = {}
-  recent_jisyo = {}
+  recent = {}
   echo '辞書をリフレッシュしました'
 enddef
 # }}}
