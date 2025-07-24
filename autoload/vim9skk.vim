@@ -1,12 +1,12 @@
 vim9script
 
 # スクリプトローカル変数 {{{
-enum CharType
-  Off, Hira, Kata, Hank, Alph, Abbr
-endenum
-
 enum Mode
   Direct, Midasi, Select
+endenum
+
+enum CharType
+  Off, Hira, Kata, Hank, Alph, Abbr
 endenum
 
 enum PopupKind
@@ -14,8 +14,8 @@ enum PopupKind
 endenum
 
 var initialized = false
-var char = { type: CharType.Hira, use_roman: true, items: [] }
 var mode = Mode.Direct
+var char = { type: CharType.Hira, use_roman: true, items: [] }
 
 var start_pos = 0
 var end_pos = 1
@@ -28,7 +28,8 @@ var last_word = ''
 
 var jisyo = {}
 var recent_jisyo = {}
-var chain_jisyo = {}
+
+var inputHist = {}
 
 var popup = {
   id: 0,
@@ -364,8 +365,8 @@ def OnInsertLeavePre()
   ))
   ToDirectMode()
   TurnOffAbbr()
-  RegisterToChainJisyo(after)
-  RegisterToChainJisyo('')
+  AddInputHist(after)
+  AddInputHist('')
 enddef
 
 def OnCmdlineEnter()
@@ -394,12 +395,12 @@ enddef
 # }}}
 
 # 入力モード制御 {{{
-var mode_settings_cache = {}
+var char_conf_cache = {}
 def GetCharConf(ct: CharType): any
-  if !mode_settings_cache->has_key(ct.ordinal)
-    mode_settings_cache[ct.ordinal] = CreateCharConf(ct)
+  if !char_conf_cache->has_key(ct.ordinal)
+    char_conf_cache[ct.ordinal] = CreateCharConf(ct)
   endif
-  return mode_settings_cache[ct.ordinal]
+  return char_conf_cache[ct.ordinal]
 enddef
 
 def CreateCharConf(ct: CharType): any
@@ -830,7 +831,7 @@ def SetMidasi(c: string = '', delta: number = 0): string
   const next_start_pos = GetPos() - delta
   const next_word = GetLine()->matchstr($'\%{end_pos}c.*\%{next_start_pos}c')
   if !!next_word
-    RegisterToChainJisyo(next_word)
+    AddInputHist(next_word)
   endif
   start_pos = next_start_pos
   return c->tolower()
@@ -991,7 +992,7 @@ def Complete(pipe: string = ''): string
   const after = before->RemoveMarker()
   pos_delta = before->len() - after->len()
   RegisterToRecentJisyo(henkan_key, GetSelectedCands())
-  RegisterToChainJisyo(after)
+  AddInputHist(after)
   cands = []
   henkan_key = ''
   ClosePopupWin()
@@ -1006,7 +1007,7 @@ enddef
 
 def AfterComplete(pipe: string): string
   RunOnMidasi()
-  ListChainJisyo()
+  ListInputHist()
   if !!cands
     PopupCands()
   endif
@@ -1104,19 +1105,18 @@ def ShowRecent(target: string)
 enddef
 # }}}
 
-# 連鎖補完をポップアップ {{{
-# 🧪様子見中
-def RegisterToChainJisyo(next_word: string)
+# 入力履歴を自動でポップアップ🧪様子見中 {{{
+def AddInputHist(next_word: string)
   if !!last_word && !!next_word
-    chain_jisyo[last_word] = chain_jisyo->get(last_word, [])->insert(next_word)->Uniq()
+    inputHist[last_word] = inputHist->get(last_word, [])->insert(next_word)->Uniq()
   endif
   last_word = next_word
   end_pos = start_pos + next_word->len()
 enddef
 
-def ListChainJisyo()
-  if chain_jisyo->has_key(last_word)
-    cands = chain_jisyo[last_word]->AddDetail('入力履歴')
+def ListInputHist()
+  if inputHist->has_key(last_word)
+    cands = inputHist[last_word]->AddDetail('入力履歴')
     cands_index = -1
   else
     cands = []
