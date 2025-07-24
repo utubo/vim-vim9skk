@@ -760,6 +760,7 @@ def MapSelectMode(enable: bool)
     MapFunction(g:vim9skk.keymap.next, 'SelectBy(1)', enable)
     MapFunction(g:vim9skk.keymap.prev, 'SelectBy(-1)', enable)
     MapFunction(g:vim9skk.keymap.select_top, 'SelectTop()->CompleteLazy()', enable)
+    MapFunction(g:vim9skk.keymap.delete, 'DeleteWord()', enable)
   endif
 enddef
 
@@ -961,14 +962,14 @@ def Cyclic(a: number, max: number): number
   return max < 1 ? 0 : ((a % max + max) % max)
 enddef
 
-def GetSelectedCands(index: number = -1): string
+def GetSelectedCand(index: number = -1): string
   return cands->get(index < 0 ? cands_index : index, '')->substitute(';.*', '', '')
 enddef
 
 def Select(index: number): string
   cands_index = Cyclic(index, len(cands))
   HighlightCands()
-  return ReplaceTarget($'{GetSelectedCands()}{okuri}')
+  return ReplaceTarget($'{GetSelectedCand()}{okuri}')
 enddef
 
 def SelectBy(d: number): string
@@ -996,7 +997,7 @@ def Complete(pipe: string = ''): string
   const before = GetTarget()
   const after = before->RemoveMarker()
   midasi.delta = before->len() - after->len()
-  RegisterToRecent(henkan_key, GetSelectedCands())
+  RegisterToRecent(henkan_key, GetSelectedCand())
   AddInputCmpl(after)
   cands = []
   henkan_key = ''
@@ -1243,6 +1244,37 @@ def RegisterToRecent(before: string, after: string)
     ->insert(newline->IconvTo(j.enc))
   # 候補探索用の辞書にはソート済のものをセットする
   jisyo[g:vim9skk.jisyo_recent] = { lines: j.lines->copy()->sort(), enc: j.enc }
+enddef
+
+def DeleteWord(): string
+  const word = GetSelectedCand()
+  if !word
+    return ''
+  endif
+  recent.lines = ReadRecent()->DeleteWordFromJisyo(word)
+  jisyo[g:vim9skk.jisyo_user].lines =
+    ReadJisyo(g:vim9skk.jisyo_user)->DeleteWordFromJisyo(word)
+  const index = cands_index
+  ClosePopupWin()
+  cands = cands->filter((i, vv) => vv->split(';')[0] !=# word)
+  PopupCands()
+  cands_index = index
+  return SelectBy(0)
+enddef
+
+def DeleteWordFromJisyo(j: any, word: string): list<string>
+  const w = $'/{word->IconvTo(j.enc)}/'
+  var newlines = []
+  for line in j.lines
+    if line->stridx(w) != -1
+      var [k, v] = line->IconvFrom(j.enc)->Split(' ')
+      v = v->split('/')->filter((i, vv) => vv !=# word)->join('/')
+      newlines += [$'{k} /{v}/'->IconvTo(j.enc)]
+    else
+      newlines += [line]
+    endif
+  endfor
+  return newlines
 enddef
 
 def SaveRecent()

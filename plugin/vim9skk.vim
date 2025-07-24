@@ -36,6 +36,7 @@ var default = {
     select_top: [],
     complete: '<CR>',
     cancel: '<C-g>',
+    delete: '<C-d>',
     prefix: '>',
     insert_leave: '<Esc>',
   },

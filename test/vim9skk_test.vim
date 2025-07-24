@@ -252,7 +252,18 @@ suite.TestRegisterUserJisyo = () => {
     'ユーザー辞書に登録できること'
   )
 }
-
+suite.TestRegisterUserJisyo = () => {
+  TestOnInsAndCmdline(
+    "\<C-j>" ..
+      "Rirekitesuto\<Space>\<Space>\<CR>" ..
+      "Rirekitesuto\<Space>\<CR>" ..
+      "Rirekitesuto\<Space>\<C-d>\<CR>" ..
+      "Rirekitesuto\<Space>\<CR>" ..
+      "",
+    'bbaa',
+    '変換履歴を削除できること'
+  )
+}
 # }}}
 
 # その他 {{{

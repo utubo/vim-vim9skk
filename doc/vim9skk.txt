@@ -155,6 +155,10 @@ g:vim9skk					*g:vim9skk*
 		cancel
 			選択モードのキャンセル
 			一番上の候補(無変換)で確定します
+		delete
+			選択中の候補をユーザー辞書と変換履歴から
+			削除します
+    delete: '<C-d>',
 		prefix
 			接頭辞や接尾辞を指定するためのキーです
 			特殊な要件がないかぎり変更しないでください
@@ -208,6 +212,7 @@ g:vim9skk					*g:vim9skk*
 			prev: ['<S-Tab>', 'x'],
 			complete: '<CR>',
 			cancel: '<C-g>',
+			delete: '<C-d>',
 			prefix: '>',
 		},
 <
