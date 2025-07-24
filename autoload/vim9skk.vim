@@ -17,18 +17,23 @@ var initialized = false
 var mode = Mode.Direct
 var char = { type: CharType.Hira, use_roman: true, items: [] }
 
-var start_pos = 0
-var end_pos = 1
-var pos_delta = 0 # 確定前後のカーソル位置の差異
+var midasi = {
+  start: 0,
+  end: 1,
+  delta: 0, # 確定前後のカーソル位置の差異
+}
+
 var henkan_key = ''
 var okuri = ''
+
 var cands = []
 var cands_index = -1
-var last_word = ''
 
 var jisyo = {}
 var recent = {}
+var is_registering_user_jisyo = false
 var input_cmpl = {}
+var last_input = ''
 
 var popup = {
   id: 0,
@@ -39,8 +44,6 @@ var popup_midasi = {
   update_timer: 0,
   pos: {},
 }
-
-var is_registering_user_jisyo = false
 
 var roman_table = {
   # 4文字
@@ -359,7 +362,7 @@ def OnInsertLeavePre()
   const before = GetTarget()
   const after = before->RemoveMarker()
   setline('.', getline('.')->substitute(
-    $'\%{start_pos}c{"."->repeat(strchars(before))}',
+    $'\%{midasi.head}c{"."->repeat(strchars(before))}',
     after,
     ''
   ))
@@ -475,7 +478,7 @@ enddef
 
 def ToDirectMode(pipe: string = '', delta: number = 0): string
   SetMode(Mode.Direct)
-  start_pos = GetPos() - delta
+  midasi.head = GetPos() - delta
   return pipe
 enddef
 
@@ -583,9 +586,9 @@ def FollowCursorModePopupWin()
   if !popup.id || popup.kind !=# PopupKind.CharType || !g:vim9skk_enable
     return
   endif
-  if mode ==# Mode.Midasi && !!start_pos
+  if mode ==# Mode.Midasi && !!midasi.head
       const p = GetPos()
-      if p < start_pos
+      if p < midasi.head
         SetMidasi()
         FixPosColoredMidasi()
       endif
@@ -828,12 +831,12 @@ enddef
 
 def SetMidasi(c: string = '', delta: number = 0): string
   SetMode(Mode.Midasi)
-  const next_start_pos = GetPos() - delta
-  const next_word = GetLine()->matchstr($'\%{end_pos}c.*\%{next_start_pos}c')
+  const next_start = GetPos() - delta
+  const next_word = GetLine()->matchstr($'\%{midasi.tail}c.*\%{next_start}c')
   if !!next_word
     AddInputCmpl(next_word)
   endif
-  start_pos = next_start_pos
+  midasi.head = next_start
   return c->tolower()
 enddef
 
@@ -851,7 +854,7 @@ enddef
 
 def SetPrefix(): string
   if mode ==# Mode.Select
-    return Complete() .. SetMidasi(g:vim9skk.keymap.prefix, pos_delta)
+    return Complete() .. SetMidasi(g:vim9skk.keymap.prefix, midasi.delta)
   else
     return g:vim9skk.keymap.prefix
   endif
@@ -860,7 +863,7 @@ enddef
 
 # 変換 {{{
 def GetTarget(): string
-  return GetLine()->matchstr($'\%{start_pos}c.*\%{GetPos()}c')
+  return GetLine()->matchstr($'\%{midasi.head}c.*\%{GetPos()}c')
 enddef
 
 def RemoveMarker(s: string): string
@@ -992,7 +995,7 @@ enddef
 def Complete(pipe: string = ''): string
   const before = GetTarget()
   const after = before->RemoveMarker()
-  pos_delta = before->len() - after->len()
+  midasi.delta = before->len() - after->len()
   RegisterToRecent(henkan_key, GetSelectedCands())
   AddInputCmpl(after)
   cands = []
@@ -1003,7 +1006,7 @@ def Complete(pipe: string = ''): string
     after
       ->ReplaceTarget()
       ->AddLeftForParen(after)
-      ->ToDirectMode(pos_delta)
+      ->ToDirectMode(midasi.delta)
       ->AfterComplete()
 enddef
 
@@ -1113,16 +1116,16 @@ enddef
 
 # 入力履歴をポップアップ🧪様子見中 {{{
 def AddInputCmpl(next_word: string)
-  if !!last_word && !!next_word
-    input_cmpl[last_word] = input_cmpl->get(last_word, [])->insert(next_word)->Uniq()
+  if !!last_input && !!next_word
+    input_cmpl[last_input] = input_cmpl->get(last_input, [])->insert(next_word)->Uniq()
   endif
-  last_word = next_word
-  end_pos = start_pos + next_word->len()
+  last_input = next_word
+  midasi.tail = midasi.head + next_word->len()
 enddef
 
 def ListInputCmpl(): list<string>
-  if input_cmpl->has_key(last_word)
-    return input_cmpl[last_word]->AddDetail('入力履歴')
+  if input_cmpl->has_key(last_input)
+    return input_cmpl[last_input]->AddDetail('入力履歴')
   else
     return []
   endif
@@ -1174,10 +1177,9 @@ export def RegisterToUserJisyo(key: string): list<string>
     cur: getpos('.'),
     char_type: char.type,
     mode: mode,
-    start_pos: start_pos,
-    end_pos: end_pos,
+    midasi: midasi->deepcopy(),
+    popup_midasi: popup_midasi->deepcopy(),
     okuri: okuri,
-    popup_midasi_pos: popup_midasi.pos->deepcopy(),
   }
   var result = []
   try
@@ -1200,14 +1202,13 @@ export def RegisterToUserJisyo(key: string): list<string>
     noautocmd setpos('.', save.cur)
     noautocmd SetCharType(save.char_type)
     noautocmd SetMode(save.mode)
-    start_pos = save.start_pos
-    end_pos = save.end_pos
+    extend(midasi, save.midasi)
+    extend(popup_midasi, save.popup_midasi)
     okuri = save.okuri
-    popup_midasi.pos = save.popup_midasi_pos
-    is_registering_user_jisyo = false
     if !!popup_midasi
       popup_move(popup_midasi.id, popup_midasi.pos)
     endif
+    is_registering_user_jisyo = false
   endtry
   return result
 enddef
