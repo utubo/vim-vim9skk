@@ -29,7 +29,7 @@ var last_word = ''
 var jisyo = {}
 var recent_jisyo = {}
 
-var inputHist = {}
+var input_hist = {}
 
 var popup = {
   id: 0,
@@ -1116,15 +1116,15 @@ enddef
 # 入力履歴をポップアップ🧪様子見中 {{{
 def AddInputHist(next_word: string)
   if !!last_word && !!next_word
-    inputHist[last_word] = inputHist->get(last_word, [])->insert(next_word)->Uniq()
+    input_hist[last_word] = input_hist->get(last_word, [])->insert(next_word)->Uniq()
   endif
   last_word = next_word
   end_pos = start_pos + next_word->len()
 enddef
 
 def ListInputHist(): list<string>
-  if inputHist->has_key(last_word)
-    return inputHist[last_word]->AddDetail('入力履歴')
+  if input_hist->has_key(last_word)
+    return input_hist[last_word]->AddDetail('入力履歴')
   else
     return []
   endif
