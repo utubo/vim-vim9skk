@@ -43,6 +43,7 @@ var popup_midasi = {
   id: 0,
   update_timer: 0,
   pos: {},
+  text: '',
 }
 
 var roman_table = {
@@ -632,10 +633,12 @@ enddef
 def CloseColoredMidasi()
   if !!popup_midasi.id
     popup_close(popup_midasi.id)
-    popup_midasi.id = 0
-    timer_stop(popup_midasi.update_timer)
-    popup_midasi.update_timer = 0
   endif
+  popup_midasi.id = 0
+  if !!popup_midasi.update_timer
+    timer_stop(popup_midasi.update_timer)
+  endif
+  popup_midasi.update_timer = 0
 enddef
 
 var latest_target = ''
@@ -644,12 +647,17 @@ def UpdateColoredMidasi(timer: number)
     return
   endif
   const t = GetTarget()
+  if popup_midasi.text ==# t
+    return
+  endif
+  popup_midasi.text = t
   if !t
     popup_hide(popup_midasi.id)
   else
     popup_show(popup_midasi.id)
-    popup_settext(popup_midasi.id, GetTarget())
+    popup_settext(popup_midasi.id, t)
   endif
+  redraw
   if mode ==# Mode.Select
     return
   endif
@@ -1193,7 +1201,10 @@ export def RegisterToUserJisyo(key: string): list<string>
   }
   var result = []
   try
+    popup_midasi.id = 0
+    CloseColoredMidasi()
     SetMode(Mode.Direct)
+    RunOnMidasi()
     autocmd vim9skk CmdlineEnter * ++once PopupMode()
     const value = input($'ユーザー辞書に登録({key}): ')->trim()
     if !value
@@ -1209,15 +1220,16 @@ export def RegisterToUserJisyo(key: string): list<string>
       echo '登録しました'
     endif
   finally
+    CloseColoredMidasi()
+    extend(popup_midasi, save.popup_midasi)
+    if !!popup_midasi.id
+      PopupColoredMidasi()
+    endif
     noautocmd setpos('.', save.cur)
     noautocmd SetCharType(save.char_type)
     noautocmd SetMode(save.mode)
     extend(midasi, save.midasi)
-    extend(popup_midasi, save.popup_midasi)
     okuri = save.okuri
-    if !!popup_midasi.id
-      popup_move(popup_midasi.id, popup_midasi.pos)
-    endif
     is_registering_user_jisyo = false
   endtry
   return result
