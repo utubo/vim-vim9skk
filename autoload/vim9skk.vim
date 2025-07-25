@@ -832,12 +832,12 @@ enddef
 
 def SetMidasi(c: string = '', delta: number = 0): string
   SetMode(Mode.Midasi)
-  const next_start = GetPos() - delta
-  const next_word = GetLine()->matchstr($'\%{midasi.tail}c.*\%{next_start}c')
+  const next_head = GetPos() - delta
+  const next_word = GetLine()->matchstr($'\%{midasi.tail}c.*\%{next_head}c')
   if !!next_word
     AddInputCmpl(next_word)
   endif
-  midasi.head = next_start
+  midasi.head = next_head
   return c->tolower()
 enddef
 
