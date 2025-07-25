@@ -615,10 +615,13 @@ def PopupColoredMidasi()
     popup_midasi.pos = GetPopupWinPos(0)
     popup_midasi.pos.highlight = 'vim9skkMidasi'
     popup_midasi.id = popup_create('', popup_midasi.pos)
+  elseif !!popup_midasi.text
+    popup_show(popup_midasi.id)
   endif
   if !!popup_midasi.update_timer
     timer_stop(popup_midasi.update_timer)
   endif
+  redraw
   popup_midasi.update_timer = timer_start(20, UpdateColoredMidasi, { repeat: - 1 })
 enddef
 
@@ -1196,6 +1199,10 @@ export def RegisterToUserJisyo(key: string): list<string>
   }
   var result = []
   try
+    if mode() ==# 'c' && !!popup_midasi.id
+      # コマンドモードでないときは見出しを隠す
+      popup_hide(popup_midasi.id)
+    endif
     popup_midasi.id = 0
     CloseColoredMidasi()
     SetMode(Mode.Direct)
