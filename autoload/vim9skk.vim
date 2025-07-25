@@ -1200,7 +1200,7 @@ export def RegisterToUserJisyo(key: string): list<string>
   var result = []
   try
     if mode() ==# 'c' && !!popup_midasi.id
-      # コマンドモードでないときは見出しを隠す
+      # コマンドモードのときは見出しを隠す
       popup_hide(popup_midasi.id)
     endif
     popup_midasi.id = 0
