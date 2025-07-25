@@ -214,12 +214,22 @@ enddef
 # }}}
 
 # ポップアップウインドウ共通 {{{
-def ClosePopupWin()
+def PopupClose()
   if !!popup.id
     popup_close(popup.id)
     popup.id = 0
     popup.kind = PopupKind.None
     cands_index = -1
+  endif
+enddef
+
+def PopupCreateOrUpdate(id: number, text: any, opt: dict<any>): number
+  if !id
+    return popup_create(text, opt)
+  else
+    popup_settext(id, text)
+    popup_setoptions(id, opt)
+    return id
   endif
 enddef
 
@@ -379,7 +389,7 @@ def OnCmdlineEnter()
   elseif getcmdtype() ==# ':'
     Disable(false)
   else
-    ClosePopupWin()
+    PopupClose()
     redraw
   endif
   if g:vim9skk_enable
@@ -566,7 +576,7 @@ def PopupMode(pipe: string = ''): string
     ? g:vim9skk.mode_label.midasi
     : char.label
     : g:vim9skk.mode_label.off
-  ClosePopupWin()
+  PopupClose()
   if !g:vim9skk_mode
     redraw
     return pipe
@@ -576,7 +586,7 @@ def PopupMode(pipe: string = ''): string
     a.time = g:vim9skk.mode_label_timeout
   endif
   a.highlight = g:vim9skk_enable ? char.hi : 'vim9skkModeOff'
-  popup.id = popup_create(g:vim9skk_mode, a)
+  popup.id = PopupCreateOrUpdate(popup.id, g:vim9skk_mode, a)
   popup.kind = PopupKind.CharType
   redraw
   return pipe
@@ -1001,7 +1011,7 @@ def Complete(pipe: string = ''): string
   AddInputCmpl(after)
   cands = []
   henkan_key = ''
-  ClosePopupWin()
+  PopupClose()
   TurnOffAbbr()
   return pipe ..
     after
@@ -1031,7 +1041,7 @@ enddef
 # 変換候補をポップアップ {{{
 def PopupCands()
   MapSelectMode(!!cands)
-  ClosePopupWin()
+  PopupClose()
   if !cands
     redraw
     return
@@ -1061,7 +1071,7 @@ def PopupCands()
     const l = k->substitute(';', "\t", '')
     lines += [l]
   endfor
-  popup.id = popup_create(lines, popupwin_options)
+  popup.id = PopupCreateOrUpdate(popup.id, lines, popupwin_options)
   popup.kind = PopupKind.Cands
   win_execute(popup.id, 'setlocal tabstop=12')
   win_execute(popup.id, 'syntax match PMenuExtra /\t.*/')
@@ -1079,7 +1089,7 @@ def CloseCands()
   MapSelectMode(false)
   cands = []
   if popup.kind ==# PopupKind.Cands
-    ClosePopupWin()
+    PopupClose()
   endif
   redraw
 enddef
@@ -1254,7 +1264,7 @@ def DeleteWord(): string
   jisyo[g:vim9skk.jisyo_user].lines =
     ReadJisyo(g:vim9skk.jisyo_user)->DeleteWordFromJisyo(word)
   const index = cands_index
-  ClosePopupWin()
+  PopupClose()
   cands = cands->filter((i, vv) => vv->split(';')[0] !=# word)
   PopupCands()
   cands_index = index
