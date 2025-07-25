@@ -529,7 +529,7 @@ def ToggleCt(ct: CharType): string
     ->SwapChars(hira_chars, k_chars)
     ->ConvChars(kata_chars, k_chars)
     ->SwapChars(alphabet_chars, abbr_chars)
-  RegisterToRecent(before, after)
+  AddRecent(before, after)
   return after
     ->ReplaceTarget()
     ->ToDirectMode()
@@ -776,7 +776,7 @@ def MapSelectMode(enable: bool)
     MapFunction(g:vim9skk.keymap.next, 'SelectBy(1)', enable)
     MapFunction(g:vim9skk.keymap.prev, 'SelectBy(-1)', enable)
     MapFunction(g:vim9skk.keymap.select_top, 'SelectTop()->CompleteLazy()', enable)
-    MapFunction(g:vim9skk.keymap.delete, 'DeleteWord()', enable)
+    MapFunction(g:vim9skk.keymap.delete, 'DeleteCand()', enable)
   endif
 enddef
 
@@ -1013,7 +1013,7 @@ def Complete(pipe: string = ''): string
   const before = GetTarget()
   const after = before->RemoveMarker()
   midasi.delta = before->len() - after->len()
-  RegisterToRecent(henkan_key, GetSelectedCand())
+  AddRecent(henkan_key, GetSelectedCand())
   AddInputCmpl(after)
   cands = []
   henkan_key = ''
@@ -1184,6 +1184,7 @@ def WriteJisyo(lines: list<string>, path: string, flags: string = '')
   writefile(lines, p, flags)
 enddef
 
+# ユーザー辞書登録のフロント(プロンプト)部分
 export def RegisterToUserJisyo(key: string): list<string>
   if is_registering_user_jisyo
     return []
@@ -1212,13 +1213,8 @@ export def RegisterToUserJisyo(key: string): list<string>
     if !value
       echo 'キャンセルしました'
     else
-      # ユーザー辞書に登録する
-      const newline = $'{key} /{value}/'
-      var j = ReadJisyo(g:vim9skk.jisyo_user)
-      j.lines += [newline->IconvTo(j.enc)]
-      jisyo[g:vim9skk.jisyo_user] = j
-      [newline]->WriteJisyo(g:vim9skk.jisyo_user, 'a')
-      result += [value]
+      AddToUserJisyo(key, value)
+      result = [value]
       echo '登録しました'
     endif
   finally
@@ -1237,6 +1233,15 @@ export def RegisterToUserJisyo(key: string): list<string>
   return result
 enddef
 
+# ユーザー辞書登録のコア部分
+def AddToUserJisyo(key: string, value: string)
+    const newline = $'{key} /{value}/'
+    var j = ReadJisyo(g:vim9skk.jisyo_user)
+    j.lines += [newline->IconvTo(j.enc)]
+    jisyo[g:vim9skk.jisyo_user] = j
+    [newline]->WriteJisyo(g:vim9skk.jisyo_user, 'a')
+enddef
+
 def ReadRecent(): dict<any>
   if !recent
     const [p, enc] = ToFullPathAndEncode(g:vim9skk.jisyo_recent)
@@ -1248,7 +1253,7 @@ def ReadRecent(): dict<any>
   return recent
 enddef
 
-def RegisterToRecent(before: string, after: string)
+def AddRecent(before: string, after: string)
   if !before || !after
     return
   endif
@@ -1269,29 +1274,29 @@ def RegisterToRecent(before: string, after: string)
   jisyo[g:vim9skk.jisyo_recent] = { lines: j.lines->copy()->sort(), enc: j.enc }
 enddef
 
-def DeleteWord(): string
-  const word = GetSelectedCand()
-  if !word
+def DeleteCand(): string
+  const cand = GetSelectedCand()
+  if !cand
     return ''
   endif
-  recent.lines = ReadRecent()->DeleteWordFromJisyo(word)
+  recent.lines = ReadRecent()->DeleteCandFromJisyo(cand)
   jisyo[g:vim9skk.jisyo_user].lines =
-    ReadJisyo(g:vim9skk.jisyo_user)->DeleteWordFromJisyo(word)
+    ReadJisyo(g:vim9skk.jisyo_user)->DeleteCandFromJisyo(cand)
   const index = cands_index
   PopupClose()
-  cands = cands->filter((i, vv) => vv->split(';')[0] !=# word)
+  cands = cands->filter((i, vv) => vv->split(';')[0] !=# cand)
   PopupCands()
   cands_index = index
   return SelectBy(0)
 enddef
 
-def DeleteWordFromJisyo(j: any, word: string): list<string>
-  const w = $'/{word->IconvTo(j.enc)}/'
+def DeleteCandFromJisyo(j: any, cand: string): list<string>
+  const w = $'/{cand->IconvTo(j.enc)}/'
   var newlines = []
   for line in j.lines
     if line->stridx(w) != -1
       var [k, v] = line->IconvFrom(j.enc)->Split(' ')
-      v = v->split('/')->filter((i, vv) => vv !=# word)->join('/')
+      v = v->split('/')->filter((i, vv) => vv !=# cand)->join('/')
       newlines += [$'{k} /{v}/'->IconvTo(j.enc)]
     else
       newlines += [line]
