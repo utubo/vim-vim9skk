@@ -641,7 +641,6 @@ def CloseColoredMidasi()
   popup_midasi.update_timer = 0
 enddef
 
-var latest_target = ''
 def UpdateColoredMidasi(timer: number)
   if !popup_midasi.id
     return
@@ -661,15 +660,11 @@ def UpdateColoredMidasi(timer: number)
   if mode ==# Mode.Select
     return
   endif
-  if latest_target ==# t
-    return
-  endif
   if !t
     PopupMode()
   else
     ShowRecent(t)
   endif
-  latest_target = t
 enddef
 # }}}
 
