@@ -1215,7 +1215,7 @@ export def RegisterToUserJisyo(key: string): list<string>
     extend(midasi, save.midasi)
     extend(popup_midasi, save.popup_midasi)
     okuri = save.okuri
-    if !!popup_midasi
+    if !!popup_midasi.id
       popup_move(popup_midasi.id, popup_midasi.pos)
     endif
     is_registering_user_jisyo = false
