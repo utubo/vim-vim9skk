@@ -15,11 +15,16 @@ endenum
 
 var initialized = false
 var mode = Mode.Direct
-var char = { type: CharType.Hira, use_roman: true, items: [] }
+var char = {
+  type: CharType.Hira,
+  use_roman: true,
+  items: [],
+}
 
 var midasi = {
   head: 0,
   tail: 1,
+  max: 1,
   delta: 0, # 確定前後のカーソル位置の差異
 }
 
@@ -236,30 +241,32 @@ enddef
 
 def GetPopupWinPos(d: number = 1): any
   var pp = {}
+  var dd = d
   if mode() ==# 'c'
     const p = getcmdscreenpos()
+    dd = -d
     pp = {
       col: p % &columns,
-      line: &lines + p / &columns - d - &cmdheight + 1,
+      line: &lines + p / &columns - &cmdheight + 1,
     }
   else
     const c = getcurpos()
     const p = screenpos(0, c[1], c[2])
     pp = {
       col: p.col,
-      line: min([p.row + d, &lines]),
+      line: min([p.row, &lines]),
     }
   endif
-  pp = g:vim9skk.change_popuppos(pp)
+  pp = g:vim9skk.getcurpos(pp)
   return {
     pos: 'topleft',
     col: pp.col,
-    line: pp.line,
+    line: pp.line + d,
     wrap: false,
   }
 enddef
 
-export def NoChangePopupPos(popup_pos: any): any
+export def NoChangeCurPos(popup_pos: any): any
   return popup_pos
 enddef
 # }}}
@@ -342,6 +349,7 @@ export def Disable(popup_even_off: bool = true): string
   PopupMode()
   DoUserEvent('Vim9skkModeChanged')
   DoUserEvent('Vim9skkLeave')
+  redraw
   return ''
 enddef
 
@@ -866,6 +874,7 @@ export def MidasiInput()
     else
       DoUserEvent('Vim9skkMidasiInput')
     endif
+    midasi.max = max([midasi.max, GetPos()])
   endif
 enddef
 
@@ -892,7 +901,7 @@ def ReplaceTarget(after: string): string
   return "\<BS>"->repeat(strchars(GetTarget())) .. after
 enddef
 
-def StartSelect(): string
+export def StartSelect(): string
   if mode ==# Mode.Select
     return SelectBy(1)
   endif
@@ -1028,6 +1037,15 @@ def Complete(pipe: string = ''): string
 enddef
 
 def AfterComplete(pipe: string): string
+  # const p = GetPos()
+  # if p < midasi.max
+  #   midasi.max -= midasi.delta
+  #   echo 1
+  #   return pipe ..
+  #     repeat("\<Right>", midasi.max - p) ..
+  #     "\<ScriptCmd>call vim9skk#StartSelect()\<CR>"
+  # endif
+  midasi.max = 0
   RunOnMidasi()
   cands = ListInputCmpl()
   if !!cands

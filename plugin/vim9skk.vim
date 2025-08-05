@@ -41,7 +41,7 @@ var default = {
     insert_leave: '<Esc>',
   },
   roman_table: {},
-  change_popuppos: vim9skk#NoChangePopupPos,
+  getcurpos: vim9skk#NoChangeCurPos,
   run_on_midasi: false,
 }
 g:vim9skk = get(g:, 'vim9skk', {})
