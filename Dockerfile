@@ -1,4 +1,4 @@
-FROM thinca/vim:v9.1.1582
+FROM thinca/vim:latest
 
 ENV REPOS utubo/vim-vim9skk
 ENV BRANCH main
