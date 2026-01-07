@@ -1,6 +1,6 @@
 # 注意
 現在、こちらは開発を中断しvim9skkpを開発しています
-https://github.com/utubo/vim-vim9skkp.vim
+https://github.com/utubo/vim-vim9skkp
 
 # 🧩vim9skk
 vim9skk は、Vim9 Scriptで実装したSKK日本語入力プラグインです
